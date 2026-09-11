@@ -1,0 +1,6 @@
+{
+  "appId": "shortpay",
+  "version": "0.8.0.8",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v0.8.0-test8",
+  "notes": "테스트8: 입력칸 표시 수정, 자료 생성 화면 정리, 업데이트 확인 추가"
+}
