@@ -24,7 +24,7 @@ public static class Tests {
   HolidayRegression(jobs,folder);GuardTests.Run(jobs,folder);ScheduleTests.Run(jobs,Path.Combine(folder,"schedule"));
   var shortRecord=new Record{Start=new DateTime(2026,9,7),End=new DateTime(2026,9,7),Allowance=70000};Engine.Fill(shortRecord);var shortResult=Engine.Calculate(shortRecord,jobs[11]);Check(shortResult.Average==8&&shortResult.OrdinaryHourly==10260.77m&&shortResult.Hourly==10320,"one-day under15 excludes meal and job allowance");
   shortRecord.End=new DateTime(2026,9,13);shortRecord.Days.Clear();shortRecord.Days["2026-09-07"]=1;shortRecord.Days["2026-09-09"]=1;shortRecord.Hours=7.5m;shortResult=Engine.Calculate(shortRecord,jobs[11]);Check(shortResult.Average==15&&shortResult.OrdinaryHourly>shortRecord.Minimum,"exactly fifteen includes eligible allowances");
-  using(var form=new MainForm()){form.CaptureScreen(Path.Combine(folder,"main-screen.png"));form.ExerciseUI(folder);form.ExerciseHolidayUI(folder);}
+  using(var form=new MainForm()){form.CaptureScreen(Path.Combine(folder,"main-screen.png"));form.ExerciseUI(folder);form.ExerciseHolidayUI(folder);form.ExerciseReset(folder);}
   File.WriteAllText(Path.Combine(folder,"test-result.txt"),"PASS "+count+" engine/report checks; see ui-test-result.txt for UI checks");
  }catch(Exception ex){File.WriteAllText(Path.Combine(folder,"test-result.txt"),ex.ToString());Environment.ExitCode=1;}}
  static void HolidayRegression(List<Job> jobs,string folder){

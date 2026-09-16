@@ -1,4 +1,4 @@
-# 배포 절차
+﻿# 배포 절차
 
 ## 정식 1.0 (2026-09-16)
 
@@ -10,11 +10,13 @@
 
 1. `src/AssemblyInfo.cs`의 AssemblyVersion / AssemblyFileVersion을 올립니다. 정식 1.0 이후는 1.1.0.0 이상을 사용합니다.
 2. 소스 수정과 사용안내 갱신 후 Windows에서 `./package.ps1`을 실행합니다. 검사 실패 시 배포를 중단합니다.
-3. 생성된 `artifacts`의 실행 파일, 배포 ZIP, 소스 ZIP, 검증결과, SHA256SUMS를 같은 버전의 GitHub Release에 올립니다. 태그는 `v1.0.0` 형식입니다. 기존 태그의 파일을 덮어쓰지 않습니다.
-4. 실제 다운로드 파일의 SHA256이 `artifacts/latest.json`과 일치하는지 확인한 다음 루트 `latest.json`을 해당 내용으로 갱신합니다. 소스와 변경 사항도 GitHub에 커밋합니다. **파일 업로드보다 버전 안내를 먼저 갱신하지 않습니다.**
+3. 생성된 `artifacts/<버전 태그>`의 실행 파일, 배포 ZIP, 소스 ZIP, 검증결과, SHA256SUMS를 같은 버전의 GitHub Release에 올립니다. 태그는 `v1.0.0` 형식입니다. 기존 태그의 파일을 덮어쓰지 않습니다.
+4. 실제 다운로드 파일의 SHA256이 `artifacts/<버전 태그>/latest.json`과 일치하는지 확인한 다음 루트 `latest.json`을 해당 내용으로 갱신합니다. 소스와 변경 사항도 GitHub에 커밋합니다. **파일 업로드보다 버전 안내를 먼저 갱신하지 않습니다.**
 5. 실행 파일의 `--update-live-test <빈 검증 폴더>`로 공개 버전 정보, 실제 다운로드 및 SHA256을 검증합니다.
 6. Drive의 최신 배포 폴더에 같은 산출물을 올리고, 이전 배포는 날짜가 있는 보관 폴더로 분리합니다.
 
 프로그램 내 버전은 AssemblyVersion에서 표시됩니다. `build.ps1`의 출력 파일명은 내부 빌드 경로이며, `package.ps1`이 어셈블리 버전으로 사용자용 파일명을 생성합니다. `latest.json`은 구버전의 페이지 열기 기능과도 호환됩니다.
 
 이전 작업본 1.1은 번호가 높아 새 정식 1.0을 자동 업데이트로 인식하지 않습니다. 이번 전환은 정식 1.0 실행 파일을 직접 설치하며, 이후 정식 버전부터 순서대로 업데이트됩니다.
+
+GitHub에서는 한글 파일명 충돌을 피하기 위해 실행 ZIP은 ShortTermPayroll-<버전>-windows.zip, 소스 ZIP은 ShortTermPayroll-<버전>-source.zip으로 게시합니다. Drive 파일명은 한글을 유지합니다.

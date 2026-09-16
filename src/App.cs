@@ -71,7 +71,7 @@ public partial class MainForm:Form {
   notice=L("본 프로그램은 개인 제작 프로그램입니다. 사용 전 현행 지침과 규정을 확인하시기 바랍니다",9);notice.Dock=DockStyle.Bottom;notice.Height=30;notice.Padding=new Padding(18,0,0,0);notice.ForeColor=Color.FromArgb(28,45,92);notice.BackColor=Palette.Background;Controls.Add(notice);notice.SendToBack();
   tabs=new PageTabs{Dock=DockStyle.Fill};foreach(string n in nav)tabs.TabPages.Add(n);
   tabs.Deselecting+=(s,e)=>{if(!loading&&e.TabPageIndex==0&&!CheckContractDeparture())e.Cancel=true;};
-  tabs.SelectedIndexChanged+=(s,e)=>{for(int i=0;i<navButtons.Count;i++){navButtons[i].Active=i==tabs.SelectedIndex;navButtons[i].Invalidate();}};main.Controls.Add(tabs);main.Controls.Add(top);
+  tabs.SelectedIndexChanged+=(s,e)=>{for(int i=0;i<navButtons.Count;i++){navButtons[i].Active=i==tabs.SelectedIndex;navButtons[i].Invalidate();}};main.Controls.Add(tabs);main.Controls.Add(top);BuildResetButton(top);
   for(int i=0;i<tabs.TabCount;i++){tabs.TabPages[i].BackColor=Palette.Background;tabs.TabPages[i].Padding=new Padding(12);}
   BuildPerson();BuildCalendar();BuildMoney();BuildOutput();BuildReference();BuildSettings();tabs.SelectedIndex=0;navButtons[0].Active=true;
  }
