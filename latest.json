@@ -1,6 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "0.8.0.8",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v0.8.0-test8",
-  "notes": "테스트8: 입력칸 표시 수정, 자료 생성 화면 정리, 업데이트 확인 추가"
+  "version": "1.0.0.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.0.0",
+  "notes": "정식 1.0. 당직 편성·수당·엑셀 출력 개선 및 업데이트 확인·검증 다운로드 지원.",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.0.0/ShortTermPayroll-1.0.exe",
+  "sha256": "26c3c9560d610f9914aee28221ab55eaf9821f21a1664f31429e1cb618720c24"
 }
