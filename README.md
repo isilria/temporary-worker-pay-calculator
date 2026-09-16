@@ -4,7 +4,7 @@
 
 ## 다운로드 및 실행
 
-[최신 정식 배포](https://github.com/isilria/temporary-worker-pay-calculator/releases/latest)에서 `1.0_실행파일.zip`을 받아 압축을 풀고 `대체근로자_임금계산기_1.0.exe`를 실행하세요. 단일 실행 파일 `ShortTermPayroll-1.0.exe`도 같은 프로그램입니다. Windows용 .NET Framework 프로그램이며 설치 과정은 없습니다.
+[최신 정식 배포](https://github.com/isilria/temporary-worker-pay-calculator/releases/latest)에서 `ShortTermPayroll-1.0-windows.zip`(Drive에서는 `1.0_실행파일.zip`)을 받아 압축을 풀고 `대체근로자_임금계산기_1.0.exe`를 실행하세요. 단일 실행 파일 `ShortTermPayroll-1.0.exe`도 같은 프로그램입니다. Windows용 .NET Framework 프로그램이며 설치 과정은 없습니다.
 
 ## 업데이트
 
