@@ -1,8 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "1.1.0.0",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.1.0",
-  "notes": "정식 1.1. 제목 오른쪽 전체 초기화 버튼 추가. 대상자·달력·임금·공제·기관 입력 초기화, 기존 저장 파일 보존.",
-  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.1.0/ShortTermPayroll-1.1.exe",
-  "sha256": "6d981593acf3515bd549ba94686d4ede6f1f92112d7e89e38b1ac8b31a23fd13"
+  "version": "1.2.0.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.2.0",
+  "notes": "임금명세서 pdf 생성 문제를 수정하였습니다.",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.2.0/ShortTermPayroll-1.2.exe",
+  "sha256": "f09a817b456e393f8cc54d61ee75a927d3bfa5deeadc2640ebdd1a24855ea078"
 }
