@@ -1,8 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "1.2.0.0",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.2.0",
-  "notes": "임금명세서 pdf 생성 문제를 수정하였습니다.",
-  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.2.0/ShortTermPayroll-1.2.exe",
-  "sha256": "f09a817b456e393f8cc54d61ee75a927d3bfa5deeadc2640ebdd1a24855ea078"
+  "version": "1.4.0.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.4.0",
+  "notes": "주휴 계산 개선, 영역별 컬러 테마, 종료 시 계산 입력 초기화, 임금산정표 작업 복원 및 신청서 표기 개선.",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.4.0/ShortTermPayroll-1.4.exe",
+  "sha256": "5a9945efc3e92cbfb3925536594a0252279824f0a7f8968404c7e5df887b6a9e"
 }
