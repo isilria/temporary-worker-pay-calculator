@@ -1,4 +1,4 @@
-param([string]$OutputDirectory)
+﻿param([string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 $root=$PSScriptRoot
 $validation=Join-Path $root ('validation_'+[Guid]::NewGuid().ToString('N'))
@@ -48,7 +48,7 @@ $verification=@(
     ('대체근로자 임금계산기 정식 '+$version.ToString(3)+' / '+(Get-Date -Format 'yyyy-MM-dd')),
     ('파일 버전 '+$version.ToString(4)+' / Windows .NET Framework / AnyCPU'),
     '배포 소스로 995개 검사 통과: 교육자료·금액·설정창122, 계산·저장·금액·출력40, 근무편성·수당·저장145, 엑셀·신청서164, 화면60, 복원419, 종료25, 업데이트20. 교육자료122·계산40·편성145·엑셀164·업데이트20은 실제 배포EXE로 실행했습니다.',
-    '달력 왼쪽 세 탭을 계약근무일(연한 유칼립투스) / 근무상황부(설정 테마) / 통상근로자 근무일(회색)로 배치했습니다. 날짜 칸·범례도 같은 역할 색상이며6개 테마에서 실제 렌더링을 검사했습니다.',
+    '달력 왼쪽 세 탭을 계약근무일(연한 하늘) / 근무상황부(설정 테마) / 통상근로자 근무일(회색)로 배치했습니다. 날짜 칸·범례도 같은 역할 색상이며6개 테마에서 실제 렌더링을 검사했습니다.',
     '가상 자료와 격리된 설정을 사용했습니다. 화면은 작업 영역 밖에서 활성화하지 않고 검사했습니다.',
     '신청서 문구는 직종명 → 원근로자 → 원근로자명 순서이며 같은 연도의 종료일은 월·일만 표시합니다.',
     '새 산정표의 입력 보존, 일반·당직 복원, 변경 재저장, 원본 보존, 손상·수식·계산 결과 변조 거부를 확인했습니다.',
@@ -70,7 +70,7 @@ Copy-Item -LiteralPath (Join-Path $root 'src/주휴수당_재검토_결과.md') 
 Copy-Item -LiteralPath (Join-Path $validation 'basis/education-임금산정표.xlsx') -Destination (Join-Path $artifacts '교육자료예시_주휴5시간.xlsx')
 Copy-Item -LiteralPath (Join-Path $validation 'logic/임금산정표.xlsx') -Destination (Join-Path $artifacts '복원예시_주휴19.2시간.xlsx')
 Copy-Item -LiteralPath (Join-Path $validation 'excel/신청서_표기수정_예시.xlsx') -Destination (Join-Path $artifacts '신청서_표기수정_예시.xlsx')
-$manifest=[ordered]@{appId='shortpay';version=$version.ToString(4);url="https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/$tag";notes='달력 세 탭 적용: 계약근무일 유칼립투스색, 근무상황부 설정 테마 연동, 통상근로자 근무일 회색. 주휴 계산·저장 복원은 유지합니다.';downloadUrl="https://github.com/isilria/temporary-worker-pay-calculator/releases/download/$tag/$exeName";sha256=$hash}
+$manifest=[ordered]@{appId='shortpay';version=$version.ToString(4);url="https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/$tag";notes='달력 세 탭 적용: 계약근무일 하늘색, 근무상황부 설정 테마 연동, 통상근로자 근무일 회색. 주휴 계산·저장 복원은 유지합니다.';downloadUrl="https://github.com/isilria/temporary-worker-pay-calculator/releases/download/$tag/$exeName";sha256=$hash}
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $artifacts 'latest.json') -Encoding UTF8
 foreach($name in @('사용안내.md','변경내용.md','주휴수당_재검토_결과.md','교육자료예시_주휴5시간.xlsx','복원예시_주휴19.2시간.xlsx','신청서_표기수정_예시.xlsx')){Copy-Item -LiteralPath (Join-Path $artifacts $name) -Destination $stage}
 Copy-Item -LiteralPath (Join-Path $artifacts 'validation-1.4.txt') -Destination (Join-Path $stage '검증결과.txt')

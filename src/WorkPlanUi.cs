@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 namespace ShortPay {
 static class CalendarColors {
- public static Color Fill(int mode){return mode==1?Color.FromArgb(218,235,225):mode==2?Color.FromArgb(216,221,229):Palette.Accent;}
- public static Color Ink(int mode){return mode==1?Color.FromArgb(52,89,71):mode==2?Color.FromArgb(46,59,75):Color.White;}
- public static Color Edge(int mode){return mode==1?Color.FromArgb(134,173,151):mode==2?Color.FromArgb(105,117,134):Palette.Accent;}
- public static Color Inactive(int mode){var a=Palette.Accent;return mode==1?Color.FromArgb(239,246,241):mode==2?Color.FromArgb(232,235,240):Color.FromArgb((a.R+2295)/10,(a.G+2295)/10,(a.B+2295)/10);}
+ public static Color Fill(int mode){return mode==1?Color.FromArgb(219,234,254):mode==2?Color.FromArgb(216,221,229):Palette.Accent;}
+ public static Color Ink(int mode){return mode==1?Color.FromArgb(41,71,102):mode==2?Color.FromArgb(46,59,75):Color.White;}
+ public static Color Edge(int mode){return mode==1?Color.FromArgb(147,180,220):mode==2?Color.FromArgb(105,117,134):Palette.Accent;}
+ public static Color Inactive(int mode){var a=Palette.Accent;return mode==1?Color.FromArgb(246,249,253):mode==2?Color.FromArgb(232,235,240):Color.FromArgb((a.R+2295)/10,(a.G+2295)/10,(a.B+2295)/10);}
 }
 class CalendarModeTab:Button {
  public int Mode;public bool Selected;

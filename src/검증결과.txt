@@ -1,7 +1,7 @@
 대체근로자 임금계산기 정식 1.4.0 / 2026-10-15
-파일 버전 1.4.0.5 / Windows .NET Framework / AnyCPU
+파일 버전 1.4.0.6 / Windows .NET Framework / AnyCPU
 배포 소스로 995개 검사 통과: 교육자료·금액·설정창122, 계산·저장·금액·출력40, 근무편성·수당·저장145, 엑셀·신청서164, 화면60, 복원419, 종료25, 업데이트20. 교육자료122·계산40·편성145·엑셀164·업데이트20은 실제 배포EXE로 실행했습니다.
-달력 왼쪽 세 탭을 계약근무일(연한 유칼립투스) / 근무상황부(설정 테마) / 통상근로자 근무일(회색)로 배치했습니다. 날짜 칸·범례도 같은 역할 색상이며6개 테마에서 실제 렌더링을 검사했습니다.
+달력 왼쪽 세 탭을 계약근무일(연한 하늘) / 근무상황부(설정 테마) / 통상근로자 근무일(회색)로 배치했습니다. 날짜 칸·범례도 같은 역할 색상이며6개 테마에서 실제 렌더링을 검사했습니다.
 가상 자료와 격리된 설정을 사용했습니다. 화면은 작업 영역 밖에서 활성화하지 않고 검사했습니다.
 신청서 문구는 직종명 → 원근로자 → 원근로자명 순서이며 같은 연도의 종료일은 월·일만 표시합니다.
 새 산정표의 입력 보존, 일반·당직 복원, 변경 재저장, 원본 보존, 손상·수식·계산 결과 변조 거부를 확인했습니다.
@@ -20,4 +20,4 @@ PASS 419 workbook restore, field fidelity, legacy, changed-input, corrupt-file a
 PASS 25 empty-start, import/edit, failed-import isolation, colored-section, silent-exit and restart checks. App rendering used an offscreen window without activation or a taskbar item; no desktop screenshot was taken.
 PASS 20 update checks
 
-EXE SHA256 31e61402dff2149e2b9ed82f591b4c73fb62fd7c8275f21e88db5b3344fc766d
+EXE SHA256 a65a3b789c7ca5093bf5fcd8b686714154f8484932fc4dad606889a237d99ddb

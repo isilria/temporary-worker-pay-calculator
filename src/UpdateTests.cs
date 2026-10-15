@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -14,8 +14,8 @@ static class UpdateTests {
   Check(PayrollUpdates.IsNewer(new Version(1,0,1),new Version(1,0)),"patch update");
   Check(PayrollUpdates.IsNewer(new Version(1,4,0,3),new Version(1,4,0,0)),"official 1.4.0 replacement updates existing release");
   Check(PayrollUpdates.IsNewer(new Version(1,4,0,3),new Version(1,4,0,2)),"official 1.4.0 replacement updates approved test build");
-  Check(PayrollUpdates.IsNewer(new Version(1,4,0,5),new Version(1,4,0,3)),"calendar release updates previous official build");
-  Check(PayrollUpdates.IsNewer(new Version(1,4,0,5),new Version(1,4,0,4)),"calendar release updates tab test build");
+  Check(PayrollUpdates.IsNewer(new Version(1,4,0,6),new Version(1,4,0,5)),"calendar release updates previous official build");
+  Check(PayrollUpdates.IsNewer(new Version(1,4,0,6),new Version(1,4,0,4)),"calendar release updates tab test build");
   var legacy=PayrollUpdates.Parse("{\"appId\":\"shortpay\",\"version\":\"1.0\",\"url\":\"https://github.com/isilria/temporary-worker-pay-calculator/releases\"}");Check(legacy.Version==new Version(1,0,0,0),"legacy manifest");
   const string prefix="{\"appId\":\"shortpay\",\"version\":\"1.1.0.0\",\"url\":\"https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.1.0\",";
   string asset="https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.1.0/ShortTermPayroll-1.1.exe";
