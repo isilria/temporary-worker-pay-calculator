@@ -1,8 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "1.4.0.3",
+  "version": "1.4.0.6",
   "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.4.0",
-  "notes": "교육자료 기준 주휴 계산 수정, 계약·주휴 근거 메모와 확인 체크 제거. 기존 임금산정표를 열면 새 산식으로 재계산합니다.",
+  "notes": "달력 세 탭 적용: 계약근무일 하늘색, 근무상황부 설정 테마 연동, 통상근로자 근무일 회색. 주휴 계산·저장 복원은 유지합니다.",
   "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.4.0/ShortTermPayroll-1.4.exe",
-  "sha256": "5b32c794b82b2a2100a3e252226798c1594d3e8602b2b8a8c545fb979dacc148"
+  "sha256": "a65a3b789c7ca5093bf5fcd8b686714154f8484932fc4dad606889a237d99ddb"
 }
