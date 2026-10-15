@@ -9,7 +9,7 @@ class PayItem {
 static class PayrollItems {
  static string N(decimal n){return n.ToString("#,##0.####");}
  public static List<PayItem> Pay(Record r,Result z){return new[]{
-  new PayItem("기본급",z.BasePay,N(z.Hourly)+"원 × "+N(z.WorkHours+z.PaidLeave)+"시간"),
+  new PayItem("기본급",z.BasePay,N(z.Hourly)+"원 × "+N(z.WorkHours+z.PaidLeave)+"시간"+(z.PaidHolidayDays>0?" (실근로 "+N(z.WorkHours)+" + 유급휴일 "+N(z.PaidHolidayHours)+")":"")),
   new PayItem("주휴수당",z.HolidayPay,N(z.Hourly)+"원 × "+N(z.HolidayHours)+"시간"),
   new PayItem("연장근로",z.OvertimePay,N(z.Hourly)+"원 × ("+N(r.Within)+"시간 + "+N(r.Overtime)+"시간 × "+(z.Guard?"1":"1.5")+")"),
   new PayItem("야간근로가산수당",z.NightPay,N(r.NightDays)+"일 × "+N(r.NightHoursPerDay)+"시간 × "+N(z.Hourly)+"원 × 50%"),

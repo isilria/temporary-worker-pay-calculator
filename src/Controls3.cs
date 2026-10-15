@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.IO;
 using System.Drawing;
@@ -22,11 +22,15 @@ class PlainNumber:TextBox {
  protected override void OnValidating(System.ComponentModel.CancelEventArgs e){if(!Commit()){e.Cancel=true;SelectAll();System.Media.SystemSounds.Beep.Play();}base.OnValidating(e);}
 }
 class DayButton:Button {
- public int State;public bool Pink;
+ public int State;public bool Pink,WeeklyHoliday,PublicHoliday;
  public DayButton(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);UseVisualStyleBackColor=false;FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;BackColor=Color.White;Cursor=Cursors.Hand;Font=new Font("맑은 고딕",14,FontStyle.Bold);}
- protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(Color.White);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;float d=Math.Min(Width,Height)-8;var r=new RectangleF((Width-d)/2,(Height-d)/2,d,d);Color blue=Color.FromArgb(65,120,211);Color ink=Enabled?blue:Color.FromArgb(190,195,207);
-  if(Text!=""&&(State!=0||Pink)){Color fill=State==1?blue:State==2?Color.FromArgb(248,204,83):Color.FromArgb(252,218,230);using(var b=new SolidBrush(fill))e.Graphics.FillEllipse(b,r);ink=State==1?Color.White:State==2?Color.FromArgb(118,84,15):Color.FromArgb(171,89,121);if(Pink&&State!=0){using(var pen=new Pen(Color.FromArgb(235,150,183),3))e.Graphics.DrawEllipse(pen,r);}}
-  if(Focused)using(var pen=new Pen(Palette.Accent,1))e.Graphics.DrawEllipse(pen,r);TextRenderer.DrawText(e.Graphics,Text,Font,ClientRectangle,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
+ protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));g.SmoothingMode=SmoothingMode.AntiAlias;float side=Math.Min(Width,Height)-2;var box=new RectangleF((Width-side)/2,(Height-side)/2,side,side);
+  Color fill=State==1?Palette.Accent:State==2?Color.FromArgb(255,237,183):State==4?Color.FromArgb(220,247,230):Color.White;
+  Color ink=!Enabled?Color.FromArgb(180,187,199):State==1?Color.White:State==2?Color.FromArgb(129,83,11):State==4?Color.FromArgb(23,103,64):PublicHoliday||Pink&&!WeeklyHoliday?Color.FromArgb(190,57,67):Palette.Ink;
+  using(var path=Palette.Round(box,3))using(var brush=new SolidBrush(fill))using(var pen=new Pen(Focused?Palette.Accent:State==1?Palette.Accent:Palette.Edge)){g.FillPath(brush,path);g.DrawPath(pen,path);}
+  bool marker=WeeklyHoliday||State==4;var number=new Rectangle((int)box.X,(int)box.Y,(int)box.Width,marker?(int)box.Height-18:(int)box.Height);
+  using(var font=new Font("맑은 고딕",Math.Min(12,Font.Size),FontStyle.Bold))TextRenderer.DrawText(g,Text,font,number,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
+  if(marker){var tag=new Rectangle((int)box.X+3,(int)box.Bottom-18,(int)box.Width-6,15);using(var font=new Font("맑은 고딕",7,FontStyle.Bold))TextRenderer.DrawText(g,WeeklyHoliday?"주휴":"유급",font,tag,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
  }
 }
 class DateInput:UserControl {
@@ -49,7 +53,7 @@ class CalendarPopup:ToolStripDropDown {
 }
 static class Holidays {
  // 2026 KASA calendar data. These labels do not decide paid-leave eligibility.
- static Dictionary<string,string> dates=new Dictionary<string,string>{{"01-01","신정"},{"02-16","설 연휴"},{"02-17","설날"},{"02-18","설 연휴"},{"03-01","삼일절"},{"03-02","대체공휴일"},{"05-05","어린이날"},{"05-24","부처님오신날"},{"05-25","대체공휴일"},{"06-03","지방선거일"},{"06-06","현충일"},{"08-15","광복절"},{"08-17","대체공휴일"},{"09-24","추석 연휴"},{"09-25","추석"},{"09-26","추석 연휴"},{"10-03","개천절"},{"10-05","대체공휴일"},{"10-09","한글날"},{"12-25","성탄절"}};
+ static Dictionary<string,string> dates=new Dictionary<string,string>{{"01-01","신정"},{"02-16","설 연휴"},{"02-17","설날"},{"02-18","설 연휴"},{"03-01","삼일절"},{"03-02","대체공휴일"},{"05-01","노동절"},{"07-17","제헌절"},{"05-05","어린이날"},{"05-24","부처님오신날"},{"05-25","대체공휴일"},{"06-03","지방선거일"},{"06-06","현충일"},{"08-15","광복절"},{"08-17","대체공휴일"},{"09-24","추석 연휴"},{"09-25","추석"},{"09-26","추석 연휴"},{"10-03","개천절"},{"10-05","대체공휴일"},{"10-09","한글날"},{"12-25","성탄절"}};
  public static string Name(DateTime date){string name;return date.Year==2026&&dates.TryGetValue(date.ToString("MM-dd"),out name)?name:"";}
 }
 public partial class MainForm {
@@ -60,9 +64,9 @@ public partial class MainForm {
  string SettingsFile{get{return SettingsTestFile??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"ShortPay_Test3","settings.json");}}
  void LoadSettings(){try{if(File.Exists(SettingsFile)){var settings=Engine.Parse<Settings>(File.ReadAllText(SettingsFile));r.Institution=settings.Institution;r.Contact=settings.Contact;r.Recipient=settings.Recipient;r.Manager=settings.Manager;r.Theme=Math.Max(0,Math.Min(5,settings.Theme));automaticUpdates.Checked=settings.AutomaticUpdates;LoadStorageSettings(settings);}}catch{}}
  void ScheduleSettingsSave(){if(loading)return;settingsPending=true;if(settingsTimer==null){settingsTimer=new Timer{Interval=350};settingsTimer.Tick+=(s,e)=>FlushSettings();}settingsTimer.Stop();settingsTimer.Start();}
- void FlushSettings(){if(settingsTimer!=null)settingsTimer.Stop();if(!settingsPending)return;string temp=SettingsFile+"."+Guid.NewGuid().ToString("N")+".tmp";try{Directory.CreateDirectory(Path.GetDirectoryName(SettingsFile));File.WriteAllText(temp,Engine.Json(new Settings{Institution=institution.Text,Contact=contact.Text,Recipient=recipient.Text,Manager=manager.Text,Theme=r.Theme,AutomaticUpdates=automaticUpdates.Checked,WageFolder=outputFolders[0].Text,PayslipFolder=outputFolders[1].Text,RequestFolder=outputFolders[2].Text,OpenGenerated=openGenerated.Checked}),System.Text.Encoding.UTF8);if(File.Exists(SettingsFile))File.Replace(temp,SettingsFile,null);else File.Move(temp,SettingsFile);settingsPending=false;}catch(Exception e){MessageBox.Show("설정을 자동 저장하지 못했습니다. "+e.Message);}finally{if(File.Exists(temp))File.Delete(temp);}}
+ void FlushSettings(){if(settingsTimer!=null)settingsTimer.Stop();if(!settingsPending)return;string temp=SettingsFile+"."+Guid.NewGuid().ToString("N")+".tmp";try{Directory.CreateDirectory(Path.GetDirectoryName(SettingsFile));File.WriteAllText(temp,Engine.Json(new Settings{Institution=institution.Text,Contact=contact.Text,Recipient=recipient.Text,Manager=manager.Text,Theme=r.Theme,AutomaticUpdates=automaticUpdates.Checked,WageFolder=outputFolders[0].Text,PayslipFolder=outputFolders[1].Text,RequestFolder=outputFolders[2].Text,OpenGenerated=openGenerated.Checked}),System.Text.Encoding.UTF8);if(File.Exists(SettingsFile))File.Replace(temp,SettingsFile,null);else File.Move(temp,SettingsFile);settingsPending=false;}catch(Exception e){if(!closingSession)MessageBox.Show("설정을 자동 저장하지 못했습니다. "+e.Message);}finally{if(File.Exists(temp))File.Delete(temp);}}
  void ResetSettings(){loading=true;institution.Text=contact.Text=recipient.Text=manager.Text="";loading=false;Changed();ScheduleSettingsSave();FlushSettings();}
- protected override void Dispose(bool disposing){if(disposing&&settingsTimer!=null)settingsTimer.Dispose();base.Dispose(disposing);}
+ protected override void Dispose(bool disposing){if(disposing){if(settingsTimer!=null)settingsTimer.Dispose();if(importTooltip!=null)importTooltip.Dispose();}base.Dispose(disposing);}
 }
 }
 namespace ShortPay {
@@ -80,8 +84,8 @@ static class MenuGlyph {
  }
 }
 class CalendarLegend:System.Windows.Forms.Control {
- public CalendarLegend(){DoubleBuffered=true;BackColor=System.Drawing.Color.White;Font=new System.Drawing.Font("맑은 고딕",10);AccessibleName="근무 파랑, 결근 노랑, 주휴 및 공휴일 분홍. 클릭: 근무, 결근, 비근무 순서";}
- protected override void OnPaint(System.Windows.Forms.PaintEventArgs e){base.OnPaint(e);e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;var colors=new[]{System.Drawing.Color.FromArgb(65,120,211),System.Drawing.Color.FromArgb(248,204,83),System.Drawing.Color.FromArgb(252,218,230)};string[] labels={"근무","결근","주휴·공휴일"};int[] positions={0,83,166};for(int i=0;i<3;i++){using(var b=new System.Drawing.SolidBrush(colors[i]))e.Graphics.FillEllipse(b,positions[i],5,14,14);System.Windows.Forms.TextRenderer.DrawText(e.Graphics,labels[i],Font,new System.Drawing.Rectangle(positions[i]+20,0,135,26),Palette.Ink,System.Windows.Forms.TextFormatFlags.Left|System.Windows.Forms.TextFormatFlags.VerticalCenter);}System.Windows.Forms.TextRenderer.DrawText(e.Graphics,"클릭: 근무 → 결근 → 비근무 → 근무",Font,new System.Drawing.Rectangle(0,26,Width,24),Palette.Ink,System.Windows.Forms.TextFormatFlags.Left|System.Windows.Forms.TextFormatFlags.VerticalCenter);}
+ public CalendarLegend(){DoubleBuffered=true;BackColor=System.Drawing.Color.White;Font=new System.Drawing.Font("맑은 고딕",10);AccessibleName="근무 파랑, 결근 노랑, 유급휴일 초록, 주휴 및 공휴일 분홍";}
+ protected override void OnPaint(System.Windows.Forms.PaintEventArgs e){base.OnPaint(e);e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;var colors=new[]{System.Drawing.Color.FromArgb(65,120,211),System.Drawing.Color.FromArgb(248,204,83),System.Drawing.Color.FromArgb(180,230,209),System.Drawing.Color.FromArgb(252,218,230)};string[] labels={"근무","결근","유급휴일","주휴·공휴일"};int[] positions={0,83,166,270};for(int i=0;i<4;i++){using(var b=new System.Drawing.SolidBrush(colors[i]))e.Graphics.FillEllipse(b,positions[i],5,14,14);System.Windows.Forms.TextRenderer.DrawText(e.Graphics,labels[i],Font,new System.Drawing.Rectangle(positions[i]+20,0,135,26),Palette.Ink,System.Windows.Forms.TextFormatFlags.Left|System.Windows.Forms.TextFormatFlags.VerticalCenter);}System.Windows.Forms.TextRenderer.DrawText(e.Graphics,"클릭: 근무 → 결근 → 비근무 / 공휴일은 유급휴일 선택 가능",Font,new System.Drawing.Rectangle(0,26,Width,24),Palette.Ink,System.Windows.Forms.TextFormatFlags.Left|System.Windows.Forms.TextFormatFlags.VerticalCenter);}
 }
 }
 
@@ -111,4 +115,3 @@ class WageComparison:System.Windows.Forms.Label {
  protected override void OnPaint(System.Windows.Forms.PaintEventArgs e){var lines=Text.Split(new[]{'\n'},System.StringSplitOptions.RemoveEmptyEntries);var flags=System.Windows.Forms.TextFormatFlags.Left|System.Windows.Forms.TextFormatFlags.NoPadding; if(lines.Length>0)System.Windows.Forms.TextRenderer.DrawText(e.Graphics,lines[0],Font,new System.Drawing.Rectangle(0,8,Width,27),Palette.Ink,flags);if(lines.Length>1){const string prefix="적용기준: ";string value=lines[1].StartsWith(prefix)?lines[1].Substring(prefix.Length):lines[1];int w=System.Windows.Forms.TextRenderer.MeasureText(e.Graphics,prefix,Font,new System.Drawing.Size(Width,27),flags).Width;System.Windows.Forms.TextRenderer.DrawText(e.Graphics,prefix,Font,new System.Drawing.Rectangle(0,46,w,27),Palette.Ink,flags);System.Windows.Forms.TextRenderer.DrawText(e.Graphics,value,Font,new System.Drawing.Rectangle(w,46,Width-w,27),System.Drawing.Color.FromArgb(36,100,211),flags);}}
 }
 }
-

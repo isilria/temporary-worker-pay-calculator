@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -6,19 +6,19 @@ using System.Windows.Forms;
 namespace ShortPay {
 public partial class MainForm {
  SoftButton resetAllButton;
- internal Func<bool> ConfirmReset = () => MessageBox.Show("현재 입력한 대상자·계약·근무 달력·임금·공제와 기관 정보를 모두 초기화할까요?\n저장하지 않은 입력은 사라집니다.\n\n저장된 파일과 출력 문서는 삭제하지 않으며, 테마와 저장 폴더 설정은 유지합니다.","전체 초기화",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)==DialogResult.Yes;
+ internal Func<bool> ConfirmReset = () => MessageBox.Show("현재 입력한 대상자·계약·근무 달력·임금·공제를 초기화할까요?\n저장하지 않은 입력은 사라집니다.\n\n저장된 파일과 출력 문서는 삭제하지 않으며, 기관 정보·기관기호·테마·저장 폴더 설정은 유지합니다.","계산 입력 초기화",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)==DialogResult.Yes;
  void BuildResetButton(Panel top){
-  resetAllButton=B("초기화",ResetAll,150);resetAllButton.Name="resetAllButton";resetAllButton.AccessibleName="전체 초기화";resetAllButton.Active=true;resetAllButton.CausesValidation=false;
-  resetAllButton.SetBounds(Math.Max(620,top.ClientSize.Width-150),0,150,38);resetAllButton.Anchor=AnchorStyles.Top|AnchorStyles.Right;top.Controls.Add(resetAllButton);
-  top.Resize+=(s,e)=>resetAllButton.Left=top.ClientSize.Width-resetAllButton.Width;
+  resetAllButton=B("초기화",ResetAll,90);resetAllButton.Name="resetAllButton";resetAllButton.AccessibleName="계산 입력 초기화";resetAllButton.Active=false;resetAllButton.CausesValidation=false;
+  var save=B("저장",Save,80);save.AccessibleName="대상자 자료 저장";var open=B("자료 열기",Open,95);open.AccessibleName="대상자 자료 열기";open.CausesValidation=false;
+  Action layout=()=>{resetAllButton.SetBounds(top.ClientSize.Width-90,0,90,36);save.SetBounds(resetAllButton.Left-88,0,80,36);open.SetBounds(save.Left-103,0,95,36);};layout();top.Controls.Add(open);top.Controls.Add(save);top.Controls.Add(resetAllButton);top.Resize+=(s,e)=>layout();
  }
  void ResetAll(){
   if(!ConfirmReset())return;
   if(settingsTimer!=null)settingsTimer.Stop();
   int selectedTheme=theme.SelectedIndex;
-  r=new Record{Start=DateTime.Today,End=DateTime.Today.AddDays(6),Theme=selectedTheme};
+  r=new Record{Start=DateTime.Today,End=DateTime.Today.AddDays(6),Theme=selectedTheme,Institution=institution.Text,Recipient=recipient.Text,Manager=manager.Text,Contact=contact.Text};
   var j=jobs[r.JobIndex];r.MonthlyBase=j.@base;r.Meal=j.meal;r.Allowance=j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value);
-  currentFile=null;lastContractWarning="";
+  currentFile=null;lastContractWarning="";lastImportNote="";
   LoadUI();RefreshAll();dirty=false;tabs.SelectedIndex=0;
   ScheduleSettingsSave();FlushSettings();person.Focus();
  }

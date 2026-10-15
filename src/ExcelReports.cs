@@ -22,10 +22,12 @@ public static class ExcelReports {
  public static void RegisterDependencies(){AppDomain.CurrentDomain.AssemblyResolve+=(s,e)=>e.Name.StartsWith("EPPlus,")?Assembly.Load(Resource("EPPlus.dll")):null;}
  public static string Narrative(Record r,Job j,Result z){
   string reason=r.Reason.Trim();if(!reason.EndsWith("대체"))reason+=" 대체";
-  string first="원근로자 "+j.name+" "+r.OriginalWorker.Trim()+"의 "+reason+"("+Date(r.Start)+"~"+Date(r.End)+")";
+  string period=Date(r.Start)+"~"+r.End.ToString(r.Start.Year==r.End.Year?"M. d.":"yyyy. M. d.",Inv);
+  string first=j.name+" 원근로자 "+r.OriginalWorker.Trim()+"의 "+reason+"("+period+")";
   decimal paidDays=(z.WorkHours+z.PaidLeave+z.HolidayHours)/r.Hours;
   string calc="주15시간 "+(z.Average<15?"미만":"이상")+" "+N(z.Hourly)+"원×"+N(r.Hours)+"시간×"+N(paidDays)+"일="+N(z.WorkAndHoliday)+"원";
   if(Engine.IsGuard(j))calc="주15시간 "+(z.Average<15?"미만":"이상")+" · 평일 "+N(r.Hours)+"시간 / 주말 "+N(r.WeekendHours)+"시간 · "+N(z.Hourly)+"원 × 총 "+N(z.WorkHours+z.PaidLeave)+"시간 = "+N(z.BasePay)+"원\n야간 "+N(r.NightDays)+"일 × "+N(r.NightHoursPerDay)+"시간 (총 "+N(Engine.NightHours(r))+"시간) × "+N(z.Hourly)+"원 × 50% = "+N(z.NightPay)+"원\n공휴일 추가근로 "+N(r.PublicHolidayDays)+"일 × "+N(r.MonthlyBase)+"원 ÷ "+N(z.MonthlyHours)+" × 3 = "+N(z.PublicHolidayPay)+"원";
+  if(!Engine.IsGuard(j)&&z.PaidHolidayDays>0)calc+="\n실근로 "+z.Days+"일("+N(z.WorkHours)+"시간) · 유급휴일 "+z.PaidHolidayDays+"일("+N(z.PaidHolidayHours)+"시간) · 주휴 "+N(z.HolidayHours)+"시간";
   return first+"\n"+calc;
 
  }
@@ -54,6 +56,7 @@ public static class ExcelReports {
     CheckEqual("신청서 실지급액(AR14)",caches["AR14"],z.Net);
    }else {CheckEqual("지급합계",caches[key=="payslip"?"F22":"G15"],z.Gross);CheckEqual("공제합계",caches[key=="payslip"?"H22":"G25"],z.Deductions);CheckEqual("실수령액",caches[key=="payslip"?"F23":"G26"],z.Net);}
   }
+  if(key=="wage")filled=WageWorkbook.Attach(filled,r,j,o);
   byte[] final=Patch(filled,new Dictionary<string,object>(),caches,null);
   string temp=path+"."+Guid.NewGuid().ToString("N")+".tmp";
   try{File.WriteAllBytes(temp,final);if(File.Exists(path))File.Replace(temp,path,null);else File.Move(temp,path);}finally{if(File.Exists(temp))File.Delete(temp);}
@@ -66,7 +69,7 @@ public static class ExcelReports {
   m["B14"]=o.Recipient;m["C14"]=r.Institution;m["D14"]=o.Manager;m["E14"]=j.name;m["F14"]=r.Name;m["G14"]=Narrative(r,j,z);m["H14"]=r.Bank;m["I14"]=r.Account;m["J14"]=r.Holder;
   m["K14"]=j.name.Contains("당직")?(j.name.Contains("1인")?"1인 당직":"2인 당직"):j.@base==2344500?"1유형":"2유형";
   m["L14"]=z.Average<15?"미만":"이상";m["O14"]=z.Average>=15?r.Allowance:0;m["P14"]=z.MonthlyHours;m["R14"]=r.Hours;m["S14"]=(z.WorkHours+z.PaidLeave)/r.Hours;
-  int count=z.Weeks.Count(w=>w.Holiday>0);m["T14"]=z.HolidayHours>0&&z.HolidayUnit!=r.Hours?"O":"X";m["U14"]=count;m["V14"]=count>0?z.HolidayHours/count:0;
+  int count=z.Weeks.Count(w=>w.Holiday>0);m["T14"]=z.Weeks.Any(w=>w.Holiday>0&&w.Holiday!=r.Hours)?"O":"X";m["U14"]=count;m["V14"]=count>0?z.HolidayHours/count:0;
   m["X14"]=r.ExtraPay+z.PublicHolidayPay;if(z.PublicHolidayPay!=0)m["X5"]="기타 지급\n(공휴일 추가근로 포함)";m["Y14"]=j.name.Contains("당직")?"O":"X";
   m["Z14"]=Math.Floor(r.Within);m["AA14"]=(r.Within-Math.Floor(r.Within))*60;m["AB14"]=Math.Floor(r.Overtime);m["AC14"]=(r.Overtime-Math.Floor(r.Overtime))*60;m["AD14"]=0;m["AE14"]=0;
   if(Engine.IsGuard(j)){
@@ -89,6 +92,7 @@ public static class ExcelReports {
   if(deductions.Count>5){deductions=new List<KeyValuePair<string,decimal>>{new KeyValuePair<string,decimal>("고용보험",z.Employment),new KeyValuePair<string,decimal>("식대",r.Food),new KeyValuePair<string,decimal>("소득세 "+N(r.Tax)+"원\n지방세 "+N(r.LocalTax)+"원",r.Tax+r.LocalTax),new KeyValuePair<string,decimal>("건강 "+N(r.Health)+"원\n요양 "+N(r.Care)+"원",r.Health+r.Care),new KeyValuePair<string,decimal>("국민연금",r.Pension)};}
   for(int i=0;i<5;i++){m["G"+(17+i)]=i<deductions.Count?deductions[i].Key:"";m["H"+(17+i)]=i<deductions.Count?(object)deductions[i].Value:"";}
   m["B25"]="※ 위 근로자 "+r.Name+"은(는) 임금명세서 1부를 교부받았습니다. 성명                    (인)                    20  .   .   .";
+  if(!Engine.IsGuard(j)){m["G8"]="근무일당 시간";m["E8"]="월 환산근로시간";m["G7"]="평균 주 약정시간";}
  }
  static void WageMap(Dictionary<string,object> m,Record r,Job j,Result z,ExportOptions o){
   m["B3"]=r.Institution+"   |   계약기간 "+Date(r.Start)+" ~ "+Date(r.End);
@@ -96,22 +100,23 @@ public static class ExcelReports {
   m["B6"]="지급계좌   "+r.Bank+" / "+r.Account+" / "+r.Holder;m["J6"]="원근로자   "+r.OriginalWorker+" / "+r.Reason;
   m["B7"]=(z.Ready?"계산자료":"검토 필요 · 미확정 예상액")+"   담당자 "+r.Contact;
   m["D11"]=N(z.Hourly)+"원 × "+N(z.WorkHours+z.PaidLeave)+"시간";m["G11"]=z.BasePay;
+  if(!Engine.IsGuard(j)){m["B11"]="근무·유급임금";m["K10"]="근무·유급일수";m["L10"]="약정시간";}
   m["D12"]=N(z.Hourly)+"원 × "+N(z.HolidayHours)+"시간";m["G12"]=z.HolidayPay;
   m["D13"]="1배 "+N(r.Within)+"시간 / 1.5배 "+N(r.Overtime)+"시간";m["G13"]=z.OvertimePay;m["D14"]="직접 입력";m["G14"]=r.ExtraPay;
   if(Engine.IsGuard(j)){var items=PayrollItems.Pay(r,z);if(items.Count>4){var last=items[4];items[3]=new PayItem(items[3].Name+" / "+last.Name,items[3].Amount+last.Amount,items[3].Formula+" / "+last.Formula);items.RemoveAt(4);}for(int i=0;i<4;i++){m["B"+(11+i)]=i<items.Count?items[i].Name:"";m["D"+(11+i)]=i<items.Count?items[i].Formula:"";m["G"+(11+i)]=i<items.Count?(object)items[i].Amount:"";}}
   decimal[] amounts={r.Food,r.Tax,r.LocalTax,r.Health,r.Care,r.Pension,z.Employment};for(int i=0;i<7;i++)m["G"+(18+i)]=amounts[i];
   for(int i=0;i<z.Weeks.Count;i++){var w=z.Weeks[i];int row=11+i;m["J"+row]=w.Period;m["K"+row]=w.PlannedDays;m["L"+row]=w.Planned;m["M"+row]=w.Actual;m["N"+row]=w.Holiday>0?"지급":w.Status;m["P"+row]=w.Holiday;}
-  var days=r.Days.OrderBy(x=>x.Key).ToList();for(int i=0;i<days.Count;i++){int row=19+i%16;bool right=i>=16;var day=days[i];m[(right?"N":"J")+row]=System.DateTime.ParseExact(day.Key,"yyyy-MM-dd",Inv).ToString("MM월dd일");m[(right?"O":"L")+row]=day.Value==1?"근무":day.Value==2?"결근":"유급";m[(right?"P":"M")+row]=day.Value==2?0:Engine.DayHours(r,j,DateTime.ParseExact(day.Key,"yyyy-MM-dd",Inv));}
+  var days=r.Days.OrderBy(x=>x.Key).ToList();for(int i=0;i<days.Count;i++){int row=19+i%16;bool right=i>=16;var day=days[i];var date=System.DateTime.ParseExact(day.Key,"yyyy-MM-dd",Inv);m[(right?"N":"J")+row]=date.ToString("MM월dd일");m[(right?"O":"L")+row]=day.Value==1?"근무":day.Value==2?"결근":day.Value==4?"유급휴일":"유급휴가";m[(right?"P":"M")+row]=day.Value==2?0:day.Value==4?Engine.PaidHolidayHoursAt(z,date):Engine.DayHours(r,j,date);}
   string[] basis={
    "일 소정근로 "+N(r.Hours)+"시간 · 주 평균 "+N(z.Average)+"시간 · 월 임금산정 "+N(z.MonthlyHours)+"시간",
    "월 기본급 "+N(r.MonthlyBase)+"원 / 급식비 "+N(z.Average>=15?r.Meal:0)+"원 / 수당 "+N(z.Average>=15?r.Allowance:0)+"원",
    "통상시급 "+N(z.OrdinaryHourly)+"원 / 최저시급 "+N(r.Minimum)+"원 / 적용 "+N(z.Hourly)+"원",
-   "주휴 기준기간 "+Date(r.Start)+" ~ "+Date(z.ReferenceEnd),
-   "주휴 1회 = "+N(z.ReferenceHours)+"시간 ÷ "+z.ReferenceDays+"일 = "+N(z.HolidayUnit)+"시간",
+   "주휴 기준: 각 주 말일부터 직전 4주 (4주 미만은 입사일부터)",
+   "주휴 주차별: "+Engine.HolidayFormula(z),
    "고용보험 "+N(r.Rate)+"% · 임금·주휴 합산 / 연장 합산 후 각각 10원 미만 절사",
    String.Join(" / ",z.Warnings.Distinct())};
   for(int i=0;i<basis.Length;i++)m["B"+(29+i)]=basis[i];
-  m["J35"]="실근로 "+z.Days+"일 · 주휴 "+N(z.HolidayHours)+"시간 · 유급휴가 "+N(z.PaidLeave)+"시간";
+  m["J35"]="실근로 "+z.Days+"일 · 주휴 "+N(z.HolidayHours)+"시간 · 유급휴가·휴일 "+N(z.PaidLeave)+"시간";
  }
  static HashSet<int> HiddenWageRows(Record r,Result z){return new HashSet<int>();}
  static XmlNamespaceManager Manager(XmlDocument doc){var n=new XmlNamespaceManager(doc.NameTable);n.AddNamespace("m",Ns);return n;}
@@ -133,6 +138,3 @@ public static class ExcelReports {
  static void SetValue(XmlDocument doc,XmlNamespaceManager ns,XmlElement c,object value){foreach(XmlNode x in c.SelectNodes("m:v|m:is",ns))c.RemoveChild(x);c.RemoveAttribute("t");if(value is string){c.SetAttribute("t","inlineStr");var inline=doc.CreateElement("is",Ns);var text=doc.CreateElement("t",Ns);text.SetAttribute("space","http://www.w3.org/XML/1998/namespace","preserve");text.InnerText=(string)value;inline.AppendChild(text);c.AppendChild(inline);}else if(value!=null){var v=doc.CreateElement("v",Ns);v.InnerText=Convert.ToString(value,Inv);c.AppendChild(v);}}
 }
 }
-
-
-

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -31,8 +31,14 @@ public static class ExcelTests {
    }
   }
   var mismatch=scenarios[0];mismatch.HourlyOverride=20000;bool blocked=false;string conflict=Path.Combine(folder,"must-not-write.xlsx");try{ExcelReports.Save(conflict,"인건비 신청내역",mismatch,jobs[11],Engine.Calculate(mismatch,jobs[11]),opt);}catch(InvalidOperationException e){blocked=e.Message.Contains("다릅니다");}Check(blocked&&!File.Exists(conflict),"mismatched formula not overwritten or saved");
+  var careJob=jobs.FindIndex(x=>x.name=="초등돌봄전담사");var care=jobs[careJob];
+  var request=new Record{Name="가상대체",OriginalWorker="홍길동",Reason="연차",Institution="가상학교",JobIndex=careJob,Start=new DateTime(2026,10,15),End=new DateTime(2026,10,20),MonthlyBase=care.@base,Meal=care.meal,Allowance=care.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value)};Engine.Fill(request,care);var requestResult=Engine.Calculate(request,care);
+  string requestPath=Path.Combine(folder,"신청서_표기수정_예시.xlsx");ExcelReports.Save(requestPath,"인건비 신청내역",request,care,requestResult,new ExportOptions{Year=2026,Month=10});
+  using(var p=new ExcelPackage(new FileInfo(requestPath))){var ws=p.Workbook.Worksheets.First();Check(ws.Cells["G14"].Text.Replace("\r","").Split('\n')[0]=="초등돌봄전담사 원근로자 홍길동의 연차 대체(2026. 10. 15.~10. 20.)","actual request job / original-worker label / name order and same-year end date");Check(Convert.ToDecimal(ws.Cells["AR14"].Value)==requestResult.Net&&ws.Cells["AR14"].Formula!="","request narrative change preserves formula and net amount");Check(requestResult.WorkAndHoliday==352840&&requestResult.HolidayHours==0,"six-day example money remains unchanged");}
+  request.Start=new DateTime(2026,9,28);request.End=new DateTime(2026,10,4);Check(ExcelReports.Narrative(request,care,requestResult).Split('\n')[0]=="초등돌봄전담사 원근로자 홍길동의 연차 대체(2026. 9. 28.~10. 4.)","same year across months omits only end year");
+  request.Start=new DateTime(2026,12,28);request.End=new DateTime(2027,1,3);Check(ExcelReports.Narrative(request,care,requestResult).Split('\n')[0]=="초등돌봄전담사 원근로자 홍길동의 연차 대체(2026. 12. 28.~2027. 1. 3.)","different end year remains explicit");
+  request.Start=request.End=new DateTime(2026,10,15);Check(ExcelReports.Narrative(request,care,requestResult).Split('\n')[0].EndsWith("(2026. 10. 15.~10. 15.)"),"single-day range keeps same-year formatting");
   File.WriteAllText(Path.Combine(folder,"excel-tests.txt"),"PASS "+count+" export and reopen checks");
  }catch(Exception e){File.WriteAllText(Path.Combine(folder,"excel-tests.txt"),e.ToString());Environment.ExitCode=1;}}
 }
 }
-

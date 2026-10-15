@@ -11,7 +11,7 @@ public partial class MainForm {
   var alerts=new List<string>();ContractAlert=alerts.Add;
   r=new Record{Name="홍길동",OriginalWorker="김담당",Reason="휴직 대체",Start=new DateTime(2026,9,7),End=new DateTime(2026,9,20)};Engine.Fill(r);LoadUI();RefreshAll();Show();Application.DoEvents();
   tabs.SelectedIndex=1;calendar.Controls.OfType<DayButton>().First(x=>x.AccessibleName.StartsWith("2026-09-09")).PerformClick();AssertUI(result.Days==9&&result.HolidayHours==8,"근무 → 결근 및 주휴 제외");
-  calendar.Controls.OfType<DayButton>().First(x=>x.AccessibleName.StartsWith("2026-09-09")).PerformClick();AssertUI(result.Days==9&&result.HolidayHours==14.4m,"결근 → 비근무 및 소정일 제외");
+  calendar.Controls.OfType<DayButton>().First(x=>x.AccessibleName.StartsWith("2026-09-09")).PerformClick();AssertUI(result.Days==9&&result.HolidayHours==13.6m,"결근 → 비근무 및 소정일 제외");
   calendar.Controls.OfType<DayButton>().First(x=>x.AccessibleName.StartsWith("2026-09-09")).PerformClick();AssertUI(result.Days==10&&result.HolidayHours==16,"비근무 → 근무 복원");
   month.SelectedIndex=9;AssertUI(result.Days==10,"월 탐색으로 데이터 유지");month.SelectedIndex=8;
   start.Value=new DateTime(2026,9,8);end.Value=new DateTime(2026,9,14);AssertUI(result.HolidayHours==8&&weeks.Rows.Count==1,"화요일 시작 1주차");
