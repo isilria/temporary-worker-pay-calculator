@@ -1,23 +1,44 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 namespace ShortPay {
+static class CalendarColors {
+ public static Color Fill(int mode){return mode==1?Color.FromArgb(218,235,225):mode==2?Color.FromArgb(216,221,229):Palette.Accent;}
+ public static Color Ink(int mode){return mode==1?Color.FromArgb(52,89,71):mode==2?Color.FromArgb(46,59,75):Color.White;}
+ public static Color Edge(int mode){return mode==1?Color.FromArgb(134,173,151):mode==2?Color.FromArgb(105,117,134):Palette.Accent;}
+ public static Color Inactive(int mode){var a=Palette.Accent;return mode==1?Color.FromArgb(239,246,241):mode==2?Color.FromArgb(232,235,240):Color.FromArgb((a.R+2295)/10,(a.G+2295)/10,(a.B+2295)/10);}
+}
+class CalendarModeTab:Button {
+ public int Mode;public bool Selected;
+ public CalendarModeTab(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;UseVisualStyleBackColor=false;Cursor=Cursors.Hand;AccessibleRole=AccessibleRole.PageTab;}
+ protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));Color fill=Selected?(Mode==2?CalendarColors.Edge(2):CalendarColors.Fill(Mode)):CalendarColors.Inactive(Mode);Color ink=Selected?(Mode==2?Color.White:CalendarColors.Ink(Mode)):Mode==0?Palette.Accent:Palette.Muted;using(var brush=new SolidBrush(fill))g.FillRectangle(brush,0,0,Width,Height-2);using(var font=new Font("맑은 고딕",9,Selected?FontStyle.Bold:FontStyle.Regular))TextRenderer.DrawText(g,Text,font,new Rectangle(4,0,Width-8,Height-3),Enabled?ink:Palette.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);if(Focused)ControlPaint.DrawFocusRectangle(g,new Rectangle(3,3,Width-7,Height-8),ink,fill);}
+}
+class CalendarModeTabs:Control {
+ readonly CalendarModeTab[] buttons;int selected=1;
+ public event EventHandler SelectedIndexChanged;
+ public int SelectedIndex{get{return selected;}set{if(value<0||value>2||selected==value)return;selected=value;RefreshSelection();if(SelectedIndexChanged!=null)SelectedIndexChanged(this,EventArgs.Empty);}}
+ public CalendarModeTab[] Tabs{get{return buttons;}}
+ public CalendarModeTabs(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);AccessibleRole=AccessibleRole.PageTabList;buttons=new[]{new CalendarModeTab{Mode=1,Text="계약근무일"},new CalendarModeTab{Mode=0,Text="근무상황부"},new CalendarModeTab{Mode=2,Text="통상근로자 근무일"}};foreach(var tab in buttons){var target=tab;tab.Click+=(s,e)=>SelectedIndex=target.Mode;tab.KeyDown+=(s,e)=>{int index=Array.IndexOf(buttons,target),next=e.KeyCode==Keys.Right?(index+1)%3:e.KeyCode==Keys.Left?(index+2)%3:-1;if(next>=0){buttons[next].Focus();SelectedIndex=buttons[next].Mode;e.SuppressKeyPress=true;}};Controls.Add(tab);}RefreshSelection();}
+ void RefreshSelection(){if(buttons==null)return;foreach(var tab in buttons){tab.Selected=tab.Mode==selected;tab.AccessibleDescription=tab.Selected?"선택됨":"선택 안 됨";tab.Invalidate();}Invalidate();}
+ protected override void OnLayout(LayoutEventArgs e){base.OnLayout(e);if(buttons==null)return;int first=Math.Min(112,(Width-154)/2);first=Math.Max(90,first);buttons[0].SetBounds(0,0,first,Height-2);buttons[1].SetBounds(first+2,0,first,Height-2);buttons[2].SetBounds(first*2+4,0,Width-first*2-4,Height-2);}
+ protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(Palette.Surface(Parent));using(var pen=new Pen(CalendarColors.Edge(selected),2))e.Graphics.DrawLine(pen,0,Height-1,Width,Height-1);}
+}
 class PlanDialog:Form {
  public bool Offscreen;
  protected override bool ShowWithoutActivation {get{return Offscreen||base.ShowWithoutActivation;}}
 }
 public partial class MainForm {
- ComboBox calendarEditMode;SoftButton planButton;ToolTip planTips=new ToolTip{AutoPopDelay=20000};internal Action<Form> InspectPlanDialog;
+ CalendarModeTabs calendarEditMode;SoftButton planButton;ToolTip planTips=new ToolTip{AutoPopDelay=20000};internal Action<Form> InspectPlanDialog;
  void PreserveAttendanceAfterDates(){if(Engine.IsGuard(jobs[r.JobIndex])){Engine.Fill(r,jobs[r.JobIndex]);return;}foreach(string key in r.Days.Keys.ToArray()){DateTime day;if(!DateTime.TryParse(key,out day)||day<r.Start.Date||day>r.End.Date)r.Days.Remove(key);}WorkPlan.PrepareComparison(r);}
- void BuildPlanControls(Card card){var heading=card.Controls.OfType<Label>().First();heading.Text="근무 달력";heading.Width=110;planButton=B("계약·주휴 기준",EditWorkPlan,142);planButton.SetBounds(130,8,142,32);card.Controls.Add(planButton);planButton.BringToFront();calendarEditMode=Combo(new[]{"출근 상태","계약 근무일","통상 비교일"},130);calendarEditMode.AccessibleName="달력 편집 대상";calendarEditMode.SetBounds(280,10,130,28);card.Controls.Add(calendarEditMode);calendarEditMode.BringToFront();calendarEditMode.SelectedIndexChanged+=(s,e)=>{if(!loading)DrawCalendar();};}
+ void BuildPlanControls(Card card){var heading=card.Controls.OfType<Label>().First();heading.Text="근무 달력";heading.Width=110;planButton=B("계약·주휴 기준",EditWorkPlan,142);planButton.SetBounds(280,8,142,32);card.Controls.Add(planButton);planButton.BringToFront();calendarEditMode=new CalendarModeTabs{AccessibleName="달력 편집 대상"};calendarEditMode.SetBounds(18,48,420,40);card.Controls.Add(calendarEditMode);calendarEditMode.BringToFront();calendarEditMode.SelectedIndexChanged+=(s,e)=>{if(!loading)DrawCalendar();};}
  void RefreshPlanControls(){if(planButton==null)return;bool guard=Engine.IsGuard(jobs[r.JobIndex]);planButton.Enabled=calendarEditMode.Enabled=!guard;planButton.Active=!guard&&WorkPlan.Problems(r).Any();planButton.Invalidate();planTips.SetToolTip(planButton,guard?"당직은 기존 별도 계산 기준을 사용합니다.":WorkPlan.Summary(r));if(guard&&calendarEditMode.SelectedIndex!=0)calendarEditMode.SelectedIndex=0;}
- string CalendarDayText(DateTime d,int state,bool prescribed){return Engine.Key(d)+" "+(calendarEditMode!=null&&calendarEditMode.SelectedIndex==1?(prescribed?"계약 근무일":"약정 비근무일"):calendarEditMode!=null&&calendarEditMode.SelectedIndex==2?(WorkPlan.Comparison(r).ContainsKey(d)?"통상 비교근로일":"비교 제외일"):state==1?"근무":state==2?"결근":state==4?"유급휴일":prescribed&&Holidays.Name(d)==""?"출근 미확인":"비근무");}
+ string CalendarDayText(DateTime d,int state,bool prescribed){return Engine.Key(d)+" "+(calendarEditMode!=null&&calendarEditMode.SelectedIndex==1?(prescribed?"계약근무일":"약정 비근무일"):calendarEditMode!=null&&calendarEditMode.SelectedIndex==2?(WorkPlan.Comparison(r).ContainsKey(d)?"통상근로자 근무일":"비교 제외일"):state==1?"근무":state==2?"결근":state==4?"유급휴일":prescribed&&Holidays.Name(d)==""?"출근 미확인":"비근무");}
  void EditCalendarDay(DateTime day){
   string key=Engine.Key(day);int old;r.Days.TryGetValue(key,out old);bool guard=Engine.IsGuard(jobs[r.JobIndex]);int mode=guard?0:calendarEditMode.SelectedIndex;
   if(mode==1){if(r.ScheduleMode==0){OutputMessage("고정 근무의 요일은 ‘계약·주휴 기준’에서 변경하세요. 일자마다 약정일이 다르면 ‘날짜별로 다른 일정’을 선택하세요.");return;}if(r.ContractDays.ContainsKey(key))r.ContractDays.Remove(key);else r.ContractDays[key]=1;}
   else if(mode==2){if(r.ScheduleMode==0){OutputMessage("고정 근무는 확인한 통상근로자의 주 근무요일로 비례 계산합니다. 날짜별 비교일 편집은 날짜별 계약에서 사용하세요.");return;}if(Holidays.Name(day)!=""){OutputMessage("날짜별 비교일의 공휴일 제외 전제를 사용합니다. 이 날짜에 근로의무가 있는 별도 기준이면 자동 확정하지 말고 적용 기준을 확인하세요.");return;}WorkPlan.PrepareComparison(r);if(r.ComparisonDays.ContainsKey(key))r.ComparisonDays.Remove(key);else r.ComparisonDays[key]=1;}
-  else if(!guard){bool planned=WorkPlan.Contract(r).ContainsKey(day);if(!planned){if(r.Days.ContainsKey(key))r.Days.Remove(key);else{OutputMessage("먼저 ‘계약 근무일’에서 약정일을 지정하세요. 고정 계약은 ‘계약·주휴 기준’의 근무요일을 확인하세요.");return;}}else if(Holidays.Name(day)!="")r.Days[key]=old==4?1:4;else if(old==1)r.Days[key]=2;else if(old==2||old==3)r.Days.Remove(key);else r.Days[key]=1;}
+  else if(!guard){bool planned=WorkPlan.Contract(r).ContainsKey(day);if(!planned){if(r.Days.ContainsKey(key))r.Days.Remove(key);else{OutputMessage("먼저 ‘계약근무일’에서 약정일을 지정하세요. 고정 계약은 ‘계약·주휴 기준’의 근무요일을 확인하세요.");return;}}else if(Holidays.Name(day)!="")r.Days[key]=old==4?1:4;else if(old==1)r.Days[key]=2;else if(old==2||old==3)r.Days.Remove(key);else r.Days[key]=1;}
   else{if(old==1)r.Days[key]=2;else if(old==2||old==3||old==4)r.Days.Remove(key);else r.Days[key]=1;}
   ResetReview();Changed();
  }

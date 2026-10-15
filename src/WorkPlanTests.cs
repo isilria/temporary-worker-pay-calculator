@@ -75,6 +75,35 @@ public partial class MainForm {
  internal void CheckWorkPlanUi(string folder,Action<bool,string> check){
   LoadFlatExample();OffscreenTest=true;ShowInTaskbar=false;StartPosition=FormStartPosition.Manual;Location=new Point(SystemInformation.VirtualScreen.Right+200,SystemInformation.VirtualScreen.Top);Show();Application.DoEvents();
   check(!Bounds.IntersectsWith(SystemInformation.VirtualScreen)&&!ShowInTaskbar,"UI tests do not cover or activate desktop");
+  check(calendarEditMode.Tabs.Select(t=>t.Text).SequenceEqual(new[]{"계약근무일","근무상황부","통상근로자 근무일"}),"tab names and left-to-right visual order");
+  check(!calendarHost.Controls.OfType<ComboBox>().Any(c=>c.AccessibleName=="달력 편집 대상"),"calendar dropdown removed");
+  string inputsBeforeTabs=Engine.Json(r);decimal netBeforeTabs=result.Net;
+  foreach(var tab in calendarEditMode.Tabs){
+   tab.PerformClick();Application.DoEvents();
+   check(calendarEditMode.SelectedIndex==tab.Mode&&tab.Selected&&calendarEditMode.Tabs.Count(t=>t.Selected)==1,"real tab click maps to independent edit mode "+tab.Text);
+   check(calendarEditMode.Left==calendar.Left&&calendarEditMode.Bottom<=contractCaption.Top&&contractCaption.Bottom<=calendar.Top,"left-aligned tabs above month caption and calendar "+tab.Text);
+   var date=calendar.Controls.OfType<DayButton>().First(b=>b.State==1);
+   check(date.CalendarMode==tab.Mode,"date tile uses current tab mode "+tab.Text);
+   using(var tile=new Bitmap(date.Width,date.Height)){date.DrawToBitmap(tile,new Rectangle(Point.Empty,tile.Size));check(tile.GetPixel(tile.Width/2,7).ToArgb()==CalendarColors.Fill(tab.Mode).ToArgb(),"actual painted date fill matches tab identity "+tab.Text);}
+   check(((FlatCalendarLegend)calendarLegend).Mode==tab.Mode,"legend follows selected tab "+tab.Text);
+   using(var snapshot=new Bitmap(Width,Height)){DrawToBitmap(snapshot,new Rectangle(Point.Empty,Size));snapshot.Save(Path.Combine(folder,"달력탭_"+tab.Mode+".png"));}
+  }
+  check(Engine.Json(r)==inputsBeforeTabs&&result.Net==netBeforeTabs,"tab switching preserves all inputs and calculated pay");
+  Func<Control,Color> paintedFill=control=>{using(var image=new Bitmap(control.Width,control.Height)){control.DrawToBitmap(image,new Rectangle(Point.Empty,image.Size));return image.GetPixel(image.Width/2,7);}};
+  decimal initialPay=result.Net;
+  for(int themeIndex=0;themeIndex<6;themeIndex++){
+   theme.SelectedIndex=themeIndex;calendarEditMode.Tabs.Single(t=>t.Mode==0).PerformClick();Application.DoEvents();
+   check(paintedFill(calendar.Controls.OfType<DayButton>().First(b=>b.State==1)).ToArgb()==Palette.Accent.ToArgb(),"attendance date follows selected theme "+themeIndex);
+   check(paintedFill(calendarEditMode.Tabs.Single(t=>t.Mode==0)).ToArgb()==Palette.Accent.ToArgb(),"attendance tab follows selected theme "+themeIndex);
+   calendarEditMode.Tabs.Single(t=>t.Mode==1).PerformClick();Application.DoEvents();
+   check(paintedFill(calendar.Controls.OfType<DayButton>().First(b=>b.State==1)).ToArgb()==Color.FromArgb(218,235,225).ToArgb(),"contract eucalyptus remains stable across themes "+themeIndex);
+   calendarEditMode.Tabs.Single(t=>t.Mode==2).PerformClick();Application.DoEvents();
+   check(paintedFill(calendar.Controls.OfType<DayButton>().First(b=>b.State==1)).ToArgb()==Color.FromArgb(216,221,229).ToArgb(),"comparator gray remains stable across themes "+themeIndex);
+   check(result.Net==initialPay,"theme changes never alter pay "+themeIndex);
+   if(themeIndex==2){calendarEditMode.SelectedIndex=0;using(var image=new Bitmap(Width,Height)){DrawToBitmap(image,new Rectangle(Point.Empty,Size));image.Save(Path.Combine(folder,"달력탭_테마연동.png"));}}
+  }
+  theme.SelectedIndex=0;
+  calendarEditMode.SelectedIndex=0;
   check(result.Ready&&result.HolidayHours==19.2m&&!holidayFormula.Text.Contains("기준 확인 전")&&!holidayFormula.Text.Contains("미리보기"),"calculation needs no memo or confirmation");
   check(calendar.Controls.OfType<DayButton>().All(b=>b.Width==b.Height),"single calendar keeps square dates");
   check(calendar.Controls.OfType<DayButton>().Where(b=>b.WeeklyHoliday).All(b=>b.AccessibleName.StartsWith("2026-09-20")||b.AccessibleName.StartsWith("2026-09-27")||b.AccessibleName.StartsWith("2026-10-04")),"rest markers stay on designated Sunday");

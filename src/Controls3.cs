@@ -22,12 +22,12 @@ class PlainNumber:TextBox {
  protected override void OnValidating(System.ComponentModel.CancelEventArgs e){if(!Commit()){e.Cancel=true;SelectAll();System.Media.SystemSounds.Beep.Play();}base.OnValidating(e);}
 }
 class DayButton:Button {
- public int State;public bool Pink,WeeklyHoliday,PublicHoliday,UnknownAttendance;
+ public int State,CalendarMode;public bool Pink,WeeklyHoliday,PublicHoliday,UnknownAttendance;
  public DayButton(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);UseVisualStyleBackColor=false;FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;BackColor=Color.White;Cursor=Cursors.Hand;Font=new Font("맑은 고딕",14,FontStyle.Bold);}
  protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));g.SmoothingMode=SmoothingMode.AntiAlias;float side=Math.Min(Width,Height)-2;var box=new RectangleF((Width-side)/2,(Height-side)/2,side,side);
-  Color fill=State==1?Palette.Accent:State==2?Color.FromArgb(255,237,183):State==4?Color.FromArgb(220,247,230):Color.White;
-  Color ink=!Enabled?Color.FromArgb(180,187,199):State==1?Color.White:State==2?Color.FromArgb(129,83,11):State==4?Color.FromArgb(23,103,64):PublicHoliday||Pink&&!WeeklyHoliday?Color.FromArgb(190,57,67):Palette.Ink;
-  using(var path=Palette.Round(box,3))using(var brush=new SolidBrush(fill))using(var pen=new Pen(Focused?Palette.Accent:State==1?Palette.Accent:Palette.Edge)){g.FillPath(brush,path);g.DrawPath(pen,path);}
+  Color fill=State==1?CalendarColors.Fill(CalendarMode):State==2?Color.FromArgb(255,237,183):State==4?Color.FromArgb(220,247,230):Color.White;
+  Color ink=!Enabled?Color.FromArgb(180,187,199):State==1?CalendarColors.Ink(CalendarMode):State==2?Color.FromArgb(129,83,11):State==4?Color.FromArgb(23,103,64):PublicHoliday||Pink&&!WeeklyHoliday?Color.FromArgb(190,57,67):Palette.Ink;
+  using(var path=Palette.Round(box,3))using(var brush=new SolidBrush(fill))using(var pen=new Pen(Focused?CalendarColors.Edge(CalendarMode):State==1?CalendarColors.Edge(CalendarMode):Palette.Edge)){g.FillPath(brush,path);g.DrawPath(pen,path);}
   bool marker=WeeklyHoliday||State==4||UnknownAttendance;var number=new Rectangle((int)box.X,(int)box.Y,(int)box.Width,marker?(int)box.Height-18:(int)box.Height);
   using(var font=new Font("맑은 고딕",Math.Min(12,Font.Size),FontStyle.Bold))TextRenderer.DrawText(g,Text,font,number,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
   if(marker){var tag=new Rectangle((int)box.X+3,(int)box.Bottom-18,(int)box.Width-6,15);using(var font=new Font("맑은 고딕",7,FontStyle.Bold))TextRenderer.DrawText(g,WeeklyHoliday?"주휴일":UnknownAttendance?"미확인":"유급",font,tag,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
