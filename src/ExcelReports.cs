@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.IO;
 using System.IO.Compression;
@@ -111,7 +111,7 @@ public static class ExcelReports {
    "일 소정근로 "+N(r.Hours)+"시간 · 주 평균 "+N(z.Average)+"시간 · 월 임금산정 "+N(z.MonthlyHours)+"시간",
    "월 기본급 "+N(r.MonthlyBase)+"원 / 급식비 "+N(z.Average>=15?r.Meal:0)+"원 / 수당 "+N(z.Average>=15?r.Allowance:0)+"원",
    "통상시급 "+N(z.OrdinaryHourly)+"원 / 최저시급 "+N(r.Minimum)+"원 / 적용 "+N(z.Hourly)+"원",
-   "주휴 기준: 각 주 말일부터 직전 4주 (4주 미만은 입사일부터)",
+   Engine.IsGuard(j)?"당직 별도 기준 · 주휴수당 미산정":"주휴 기준: "+WorkPlan.Summary(r),
    "주휴 주차별: "+Engine.HolidayFormula(z),
    "고용보험 "+N(r.Rate)+"% · 임금·주휴 합산 / 연장 합산 후 각각 10원 미만 절사",
    String.Join(" / ",z.Warnings.Distinct())};

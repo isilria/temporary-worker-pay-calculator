@@ -31,21 +31,21 @@ static class PayrollUpdates {
  internal static string Download(UpdateInfo info){
   if(String.IsNullOrEmpty(info.DownloadUrl)||String.IsNullOrEmpty(info.Sha256))throw new InvalidDataException("직접 다운로드 정보가 없습니다.");
   string folder=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"ShortPay","Updates",info.Version+"_"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
-  string file=Path.Combine(folder,"대체근로자_임금계산기_"+info.Version.ToString(2)+".exe"),temp=file+".part";
+  string file=Path.Combine(folder,"대체근로자_임금계산기_"+info.Version.ToString(3)+".exe"),temp=file+".part";
   try{using(var response=Request(info.DownloadUrl).GetResponse()){if(response.ResponseUri.Scheme!="https")throw new InvalidDataException("안전하지 않은 다운로드 응답입니다.");using(var input=response.GetResponseStream())using(var output=File.Create(temp)){byte[] buffer=new byte[81920];long total=0;int n;while((n=input.Read(buffer,0,buffer.Length))>0){total+=n;if(total>100*1024*1024)throw new InvalidDataException("배포 파일 크기가 제한을 초과했습니다.");output.Write(buffer,0,n);}}}Verify(temp,info.Sha256);using(var reader=new BinaryReader(File.OpenRead(temp))){if(reader.ReadUInt16()!=0x5A4D)throw new InvalidDataException("Windows 실행 파일이 아닙니다.");}File.Move(temp,file);return file;}
   finally{if(File.Exists(temp))File.Delete(temp);}
  }
 }
 public partial class MainForm {
  CheckBox automaticUpdates;Label updateStatus;SoftButton updateButton;bool updateBusy;
- void BuildUpdateSettings(Control page){var c=Section(page,"업데이트 확인",94);var version=L("현재 버전  "+Assembly.GetExecutingAssembly().GetName().Version.ToString(2),10,true);version.SetBounds(20,32,260,26);c.Controls.Add(version);automaticUpdates=new CheckBox{Text="시작 시 업데이트 확인",Checked=true,AutoSize=true,BackColor=System.Drawing.Color.Transparent};automaticUpdates.SetBounds(318,32,260,28);c.Controls.Add(automaticUpdates);updateButton=B("지금 확인",()=>CheckUpdates(true),150);updateButton.SetBounds(744,28,150,36);updateButton.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(updateButton);updateStatus=L("업데이트 확인 전",9);updateStatus.SetBounds(20,63,870,25);updateStatus.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;c.Controls.Add(updateStatus);}
+ void BuildUpdateSettings(Control page){var c=Section(page,"업데이트 확인",94);var version=L("현재 버전  "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3),10,true);version.SetBounds(20,32,260,26);c.Controls.Add(version);automaticUpdates=new CheckBox{Text="시작 시 업데이트 확인",Checked=true,AutoSize=true,BackColor=System.Drawing.Color.Transparent};automaticUpdates.SetBounds(318,32,260,28);c.Controls.Add(automaticUpdates);updateButton=B("지금 확인",()=>CheckUpdates(true),150);updateButton.SetBounds(744,28,150,36);updateButton.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(updateButton);updateStatus=L("업데이트 확인 전",9);updateStatus.SetBounds(20,63,870,25);updateStatus.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;c.Controls.Add(updateStatus);}
  async void CheckUpdates(bool interactive){
   if(updateBusy)return;updateBusy=true;updateButton.Enabled=false;updateStatus.Text="새 버전을 확인하고 있습니다…";
   try{string source=PayrollUpdates.Source();var info=await Task.Run(()=>PayrollUpdates.Fetch(source));if(IsDisposed)return;
    if(!PayrollUpdates.IsNewer(info.Version,Assembly.GetExecutingAssembly().GetName().Version)){updateStatus.Text="최신 버전입니다. · "+DateTime.Now.ToString("yyyy-MM-dd HH:mm");return;}
-   updateStatus.Text="새 버전 "+info.Version.ToString(2)+"이 있습니다.";
+   updateStatus.Text="새 버전 "+info.Version.ToString(3)+"이 있습니다.";
    string action=String.IsNullOrEmpty(info.DownloadUrl)?"다운로드 페이지를 열까요?":"새 실행 파일을 다운로드할까요? 현재 작업은 유지됩니다.";
-   if(MessageBox.Show(this,"새 버전 "+info.Version.ToString(2)+"이 있습니다.\n"+info.Notes+"\n\n"+action,"업데이트 확인",MessageBoxButtons.YesNo,MessageBoxIcon.Information)!=DialogResult.Yes)return;
+   if(MessageBox.Show(this,"새 버전 "+info.Version.ToString(3)+"이 있습니다.\n"+info.Notes+"\n\n"+action,"업데이트 확인",MessageBoxButtons.YesNo,MessageBoxIcon.Information)!=DialogResult.Yes)return;
    if(String.IsNullOrEmpty(info.DownloadUrl)){System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(info.Url){UseShellExecute=true});return;}
    updateStatus.Text="업데이트 다운로드 및 파일 확인 중…";string file=await Task.Run(()=>PayrollUpdates.Download(info));if(IsDisposed)return;
    updateStatus.Text="새 버전 다운로드 완료 · 파일 검증 성공";

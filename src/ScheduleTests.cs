@@ -15,7 +15,7 @@ public static class ScheduleTests {
  public static void Run(List<Job> jobs,string folder){
   Directory.CreateDirectory(folder);
   var r=Guard(jobs,2,new DateTime(2026,9,10),new DateTime(2026,9,14));Days(r,"2026-09-10","2026-09-14");
-  var z=Engine.Calculate(r,jobs[r.JobIndex]);Check(z.Days==2&&z.WorkHours==17,"Thursday-Monday unmanned Saturday does not shift alternation");
+  var z=PlanTestData.Calculate(r,jobs[r.JobIndex]);Check(z.Days==2&&z.WorkHours==17,"Thursday-Monday unmanned Saturday does not shift alternation");
   r=Guard(jobs,1,new DateTime(2026,9,10),new DateTime(2026,9,14));Days(r,"2026-09-10","2026-09-11","2026-09-13","2026-09-14");
   r=Guard(jobs,2,new DateTime(2026,8,27),new DateTime(2026,8,31));Days(r,"2026-08-27","2026-08-29","2026-08-31");
   r=Guard(jobs,2,new DateTime(2026,8,28),new DateTime(2026,8,31));Days(r,"2026-08-28","2026-08-30");
@@ -28,7 +28,7 @@ public static class ScheduleTests {
   r=Guard(jobs,1,new DateTime(2026,2,15),new DateTime(2026,2,19));Days(r,"2026-02-15","2026-02-19");
   r=Guard(jobs,1,new DateTime(2026,5,4),new DateTime(2026,5,6));Days(r,"2026-05-04","2026-05-05","2026-05-06");
   r=Guard(jobs,2,new DateTime(2026,5,5),new DateTime(2026,5,7));Days(r,"2026-05-05","2026-05-07");
-  var ordinary=new Record();Engine.Fill(ordinary,jobs[2]);Check(ordinary.Days.Count==10&&Engine.Calculate(ordinary,jobs[2]).Net==1049000,"ordinary payroll regression");
+  var ordinary=new Record();Engine.Fill(ordinary,jobs[2]);Check(ordinary.Days.Count==10&&PlanTestData.Calculate(ordinary,jobs[2]).Net==1049000,"ordinary payroll regression");
   Check(jobs.Single(j=>j.name=="전산실무사").allowances["자격수당"]==107220,"computer allowance");
   Check(jobs.Single(j=>j.name=="영양사").allowances["면허가산수당"]==117220,"nutritionist allowance");
   // Every possible start weekday, both security days and both staffing patterns.
@@ -37,7 +37,7 @@ public static class ScheduleTests {
    Check(r.Days.Keys.All(k=>{DateTime d=DateTime.Parse(k);return !Engine.IsUnmannedDay(r,d)&&(people==1||(d-r.Start).Days%2==0);}),"start-weekday and crossmonth cadence");
   }
   r=Guard(jobs,2,new DateTime(2026,4,6),new DateTime(2026,4,12));r.NightDays=3;r.PublicHolidayDays=1;r.Within=1.25m;r.Overtime=2.5m;r.Food=1000;
-  z=Engine.Calculate(r,jobs[r.JobIndex]);Check(z.WorkHours==37.5m&&Engine.NightHours(r)==4.5m,"actual work and night totals");
+  z=PlanTestData.Calculate(r,jobs[r.JobIndex]);Check(z.WorkHours==37.5m&&Engine.NightHours(r)==4.5m,"actual work and night totals");
   Check(PayrollItems.Pay(r,z).Sum(p=>p.Amount)==z.Gross,"payslip items reconcile");
   foreach(string kind in new[]{"인건비 신청내역","급여명세서","임금산정표"}){
    string file=Path.Combine(folder,kind+".xlsx");ExcelReports.Save(file,kind,r,jobs[r.JobIndex],z,new ExportOptions{Year=2026,Month=4});
@@ -58,7 +58,7 @@ public static class ScheduleTests {
   foreach(int people in new[]{1,2})foreach(int day in new[]{0,6})foreach(int length in new[]{0,6,20}){
    var scenario=Guard(jobs,people,new DateTime(2026,8,27),new DateTime(2026,8,27).AddDays(length),day);
    scenario.NightDays=Math.Min(3,scenario.Days.Count);scenario.PublicHolidayDays=Math.Min(1,scenario.Days.Count);
-   var result=Engine.Calculate(scenario,jobs[scenario.JobIndex]);
+   var result=PlanTestData.Calculate(scenario,jobs[scenario.JobIndex]);
    foreach(string kind in new[]{"인건비 신청내역","급여명세서"}){
     string file=Path.Combine(folder,"guard-"+people+"-"+day+"-"+length+"-"+kind+".xlsx");
     ExcelReports.Save(file,kind,scenario,jobs[scenario.JobIndex],result,new ExportOptions{Year=2026,Month=8});

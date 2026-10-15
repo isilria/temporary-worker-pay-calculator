@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -21,7 +21,7 @@ public static class ExcelTests {
   for(int k=0;k<scenarios.Count;k++){
    var r=scenarios[k];r.Name="김대체";r.Identity="900101-1234567";r.OriginalWorker="홍길동";r.Reason="특별휴가";r.Bank="농협은행";r.Account="001-0023-004567";r.Holder="김대체";r.Institution="인천예시초등학교";r.Contact="이담당";r.JobIndex=11;r.Allowance=70000;Engine.Fill(r);
    if(k==2){r.Days.Remove("2026-09-08");r.Days.Remove("2026-09-10");}
-   var z=Engine.Calculate(r,jobs[11]);var dir=Path.Combine(folder,"case-"+k);Directory.CreateDirectory(dir);
+   var z=PlanTestData.Calculate(r,jobs[11]);var dir=Path.Combine(folder,"case-"+k);Directory.CreateDirectory(dir);
    foreach(string kind in new[]{"임금산정표","급여명세서","인건비 신청내역"}){
     var path=Path.Combine(dir,kind+".xlsx");ExcelReports.Save(path,kind,r,jobs[11],z,opt);
     using(var pkg=new ExcelPackage(new FileInfo(path))){var ws=pkg.Workbook.Worksheets.First();string total=kind=="급여명세서"?"F23":kind=="임금산정표"?"G26":"AR14";Check(Convert.ToDecimal(ws.Cells[total].Value)==z.Net,"reopen net "+k+kind);Check(ws.Cells[total].Formula!="","formula preserved "+k+kind);
@@ -30,9 +30,9 @@ public static class ExcelTests {
     }
    }
   }
-  var mismatch=scenarios[0];mismatch.HourlyOverride=20000;bool blocked=false;string conflict=Path.Combine(folder,"must-not-write.xlsx");try{ExcelReports.Save(conflict,"인건비 신청내역",mismatch,jobs[11],Engine.Calculate(mismatch,jobs[11]),opt);}catch(InvalidOperationException e){blocked=e.Message.Contains("다릅니다");}Check(blocked&&!File.Exists(conflict),"mismatched formula not overwritten or saved");
+  var mismatch=scenarios[0];mismatch.HourlyOverride=20000;bool blocked=false;string conflict=Path.Combine(folder,"must-not-write.xlsx");try{ExcelReports.Save(conflict,"인건비 신청내역",mismatch,jobs[11],PlanTestData.Calculate(mismatch,jobs[11]),opt);}catch(InvalidOperationException e){blocked=e.Message.Contains("다릅니다");}Check(blocked&&!File.Exists(conflict),"mismatched formula not overwritten or saved");
   var careJob=jobs.FindIndex(x=>x.name=="초등돌봄전담사");var care=jobs[careJob];
-  var request=new Record{Name="가상대체",OriginalWorker="홍길동",Reason="연차",Institution="가상학교",JobIndex=careJob,Start=new DateTime(2026,10,15),End=new DateTime(2026,10,20),MonthlyBase=care.@base,Meal=care.meal,Allowance=care.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value)};Engine.Fill(request,care);var requestResult=Engine.Calculate(request,care);
+  var request=new Record{Name="가상대체",OriginalWorker="홍길동",Reason="연차",Institution="가상학교",JobIndex=careJob,Start=new DateTime(2026,10,15),End=new DateTime(2026,10,20),MonthlyBase=care.@base,Meal=care.meal,Allowance=care.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value)};Engine.Fill(request,care);var requestResult=PlanTestData.Calculate(request,care);
   string requestPath=Path.Combine(folder,"신청서_표기수정_예시.xlsx");ExcelReports.Save(requestPath,"인건비 신청내역",request,care,requestResult,new ExportOptions{Year=2026,Month=10});
   using(var p=new ExcelPackage(new FileInfo(requestPath))){var ws=p.Workbook.Worksheets.First();Check(ws.Cells["G14"].Text.Replace("\r","").Split('\n')[0]=="초등돌봄전담사 원근로자 홍길동의 연차 대체(2026. 10. 15.~10. 20.)","actual request job / original-worker label / name order and same-year end date");Check(Convert.ToDecimal(ws.Cells["AR14"].Value)==requestResult.Net&&ws.Cells["AR14"].Formula!="","request narrative change preserves formula and net amount");Check(requestResult.WorkAndHoliday==352840&&requestResult.HolidayHours==0,"six-day example money remains unchanged");}
   request.Start=new DateTime(2026,9,28);request.End=new DateTime(2026,10,4);Check(ExcelReports.Narrative(request,care,requestResult).Split('\n')[0]=="초등돌봄전담사 원근로자 홍길동의 연차 대체(2026. 9. 28.~10. 4.)","same year across months omits only end year");

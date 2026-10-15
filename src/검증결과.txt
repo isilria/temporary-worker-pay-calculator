@@ -1,20 +1,22 @@
-대체근로자 임금계산기 정식 1.4 / 2026-10-15
-파일 버전 1.4.0.0 / Windows .NET Framework / AnyCPU
-배포 소스로 821개 검사 통과: 계산·저장·금액·출력 40, 근무편성·수당·저장 145, 엑셀·신청서 문구 164, 화면 배치 60, 엑셀 복원 371, 종료·재실행·기관 설정 25, 업데이트 16.
+대체근로자 임금계산기 정식 1.4.0 / 2026-10-15
+파일 버전 1.4.0.3 / Windows .NET Framework / AnyCPU
+배포 소스로 945개 검사 통과: 교육자료·금액·설정창74, 계산·저장·금액·출력40, 근무편성·수당·저장145, 엑셀·신청서164, 화면60, 복원419, 종료25, 업데이트18. 교육자료74·계산40·편성145·엑셀164·업데이트18은 실제 배포EXE로 실행했습니다.
 가상 자료와 격리된 설정을 사용했습니다. 화면은 작업 영역 밖에서 활성화하지 않고 검사했습니다.
 신청서 문구는 직종명 → 원근로자 → 원근로자명 순서이며 같은 연도의 종료일은 월·일만 표시합니다.
 새 산정표의 입력 보존, 일반·당직 복원, 변경 재저장, 원본 보존, 손상·수식·계산 결과 변조 거부를 확인했습니다.
-주휴 예시: 실제 근무 12일·96시간, 유급휴일 3일·18시간, 주휴 4.8+6+6=16.8시간, 실지급액 1,429,260원.
+교육자료 예시: 약정40시간÷같은 기간 통상8일=5시간. 첫 주 실제 지급도5시간입니다. 기존 날짜별 예시:96시간÷15일=6.4시간씩3회, 합계19.2시간, 유급 공휴일3회도 각6.4시간, 실지급액1,468,600원. 고정 주24시간 약정의 비례계산은 별개입니다.
+계약·주휴 설정창의 근거 메모·하단 확인 체크와 확인 서명에 따른 출력 제한을 제거했습니다. 실제 입력 오류 차단은 유지합니다.
 PDF 생성·외관 및 실제 프린터 인쇄는 이번 배포에서 재검증하지 않았습니다.
-주휴 재검토판과 동일한 Engine.cs SHA256 27923d4b3b1563d9e5b25c80b52730fd0738c6e7c37d833f358eab13e77736b2
+교육자료 반영 Engine.cs SHA256 20427f99e909dfc2a6bfdcc6accc01eec38f7d303c5d41867d1917c096395382
 
 실제 검사 기록:
+PASS 74 whole-contract education example, eligibility/attendance, monetary, fixed/irregular, migration, native/XLSX and simplified-dialog checks.
 PASS 40 engine, saved-input, monetary and export checks. Separate schedule and guard-workbook checks saved in schedule-tests.txt. PDF and interactive UI checks are outside this logic audit.
 PASS 145 schedule, allowance, output and persistence checks
 PASS 164 export and reopen checks
 PASS 60 layout checks: square dates, three window sizes, all six pages, month boundary, six calendar rows and preserved example money.
-PASS 371 workbook restore, field fidelity, legacy, changed-input, corrupt-file and formula-preservation checks. Session/UI checks are in session-tests.txt.
+PASS 419 workbook restore, field fidelity, legacy, changed-input, corrupt-file and formula-preservation checks. Session/UI checks are in session-tests.txt.
 PASS 25 empty-start, import/edit, failed-import isolation, colored-section, silent-exit and restart checks. App rendering used an offscreen window without activation or a taskbar item; no desktop screenshot was taken.
-PASS 16 update checks
+PASS 18 update checks
 
-EXE SHA256 5a9945efc3e92cbfb3925536594a0252279824f0a7f8968404c7e5df887b6a9e
+EXE SHA256 5b32c794b82b2a2100a3e252226798c1594d3e8602b2b8a8c545fb979dacc148

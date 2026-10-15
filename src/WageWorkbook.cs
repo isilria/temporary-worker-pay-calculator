@@ -108,13 +108,13 @@ public static class WageWorkbook {
     decimal hours=Number(ws,(side==0?"M":"P")+row);if(value==1&&hours!=r.Hours)throw new InvalidDataException("날짜별 근로시간이 일 소정근로시간과 다릅니다: "+date);r.Days.Add(key,value);
    }
   }
-  if(legacy){decimal insurance=Number(ws,"G24");if(insurance<0)throw new InvalidDataException("고용보험 금액을 확인하세요.");r.Employment=insurance!=0||Engine.Calculate(r,jobs[r.JobIndex]).Employment==0;r.EmploymentExclusionReason="";r.RateConfirmed=false;}
+  if(legacy){decimal insurance=Number(ws,"G24");if(insurance<0)throw new InvalidDataException("고용보험 금액을 확인하세요.");r.Employment=insurance!=0||Engine.Calculate(r,jobs[r.JobIndex]).Employment==0;r.EmploymentExclusionReason="";r.RateConfirmed=false;WorkPlan.FromLegacy(r);}
   return r;
  }
  public static void Validate(Record r,List<Job> jobs){
-  if(r!=null)NormalizeDates(r);
-  if(r==null||r.Version!=5||r.Days==null||r.JobIndex<0||r.JobIndex>=jobs.Count||r.Theme<0||r.Theme>5||r.Start.Year<2020||r.End.Year>2050||r.End<r.Start||(r.End-r.Start).TotalDays>31||r.Hours<.25m||r.Hours>(Engine.IsGuard(jobs[r.JobIndex])?24:8)||r.WeekendHours<=0||r.WeekendHours>24||r.NightDays<0||r.NightDays>31||r.PublicHolidayDays<0||r.PublicHolidayDays>31||r.NightHoursPerDay<0||r.NightHoursPerDay>8||(r.UnmannedDay!=0&&r.UnmannedDay!=6))throw new InvalidDataException("복원자료의 날짜·직종·근로시간 범위를 확인하세요.");
-  foreach(var field in typeof(Record).GetFields())if(field.FieldType==typeof(string)&&field.GetValue(r)==null)field.SetValue(r,"");
+  if(r!=null){NormalizeDates(r);if(r.Days!=null)WorkPlan.Upgrade(r);}
+  if(r==null||r.Version!=7||r.Days==null||r.ContractDays==null||r.ComparisonDays==null||r.ScheduleMode<0||r.ScheduleMode>1||r.ContractWeekdays<1||r.ContractWeekdays>127||r.NormalWeekdays<1||r.NormalWeekdays>127||r.WeeklyRestDay<0||r.WeeklyRestDay>6||r.NormalDayHours<=0||r.NormalDayHours>8||r.JobIndex<0||r.JobIndex>=jobs.Count||r.Theme<0||r.Theme>5||r.Start.Year<2020||r.End.Year>2050||r.End<r.Start||(r.End-r.Start).TotalDays>31||r.Hours<.25m||r.Hours>(Engine.IsGuard(jobs[r.JobIndex])?24:8)||r.WeekendHours<=0||r.WeekendHours>24||r.NightDays<0||r.NightDays>31||r.PublicHolidayDays<0||r.PublicHolidayDays>31||r.NightHoursPerDay<0||r.NightHoursPerDay>8||(r.UnmannedDay!=0&&r.UnmannedDay!=6))throw new InvalidDataException("복원자료의 날짜·직종·계약·주휴 기준 범위를 확인하세요.");
+  WorkPlan.Validate(r);foreach(var field in typeof(Record).GetFields())if(field.FieldType==typeof(string)&&field.GetValue(r)==null)field.SetValue(r,"");
   decimal[] money={r.MonthlyBase,r.Meal,r.Allowance,r.ExtraPay,r.Food,r.Tax,r.LocalTax,r.Health,r.Care,r.Pension,r.Other};
   if(money.Any(x=>x<0||x>100000000)||r.Minimum<0||r.Minimum>100000||r.HourlyOverride<0||r.HourlyOverride>1000000||r.Within<0||r.Within>300||r.Overtime<0||r.Overtime>300||r.Rate<0||r.Rate>100||r.HolidayHours<0||r.HolidayHours>80||r.RequestRound<1||r.RequestRound>4||r.OutputYear<0||r.OutputYear>2050||r.OutputMonth<0||r.OutputMonth>12||r.PaymentDate.HasValue&&(r.PaymentDate.Value.Year<2020||r.PaymentDate.Value.Year>2050))throw new InvalidDataException("복원자료의 금액·시간 범위를 확인하세요.");
   foreach(var day in r.Days){DateTime date;if(!DateTime.TryParseExact(day.Key,"yyyy-MM-dd",Inv,DateTimeStyles.None,out date)||date<r.Start||date>r.End||day.Value<1||day.Value>4)throw new InvalidDataException("복원자료의 근무일을 확인하세요.");}

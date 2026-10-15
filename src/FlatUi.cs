@@ -5,10 +5,12 @@ using System.Linq;
 using System.Windows.Forms;
 namespace ShortPay {
 class FlatCalendarLegend:CalendarLegend {
- public FlatCalendarLegend(){AccessibleName="근무 파랑, 비근무 흰색, 결근 노랑, 유급휴일 초록, 주휴 글자 표시";}
- protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));string[] names={"근무","비근무","결근","유급휴일","주휴"};Color[] colors={Palette.Accent,Color.White,Color.FromArgb(255,237,183),Color.FromArgb(220,247,230),Color.White};int part=Width/5;
-  for(int i=0;i<5;i++){int x=i*part;using(var fill=new SolidBrush(colors[i]))g.FillRectangle(fill,x+1,5,13,13);using(var pen=new Pen(i==4?Palette.Accent:Palette.Edge))g.DrawRectangle(pen,x+1,5,13,13);if(i==4)using(var f=new Font("맑은 고딕",6))TextRenderer.DrawText(g,"주",f,new Rectangle(x+1,4,14,14),Palette.Accent,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);using(var f=new Font("맑은 고딕",9))TextRenderer.DrawText(g,names[i],f,new Rectangle(x+20,0,part-19,24),Palette.Ink,TextFormatFlags.VerticalCenter);}
-  using(var f=new Font("맑은 고딕",8))TextRenderer.DrawText(g,"클릭: 근무 → 결근 → 비근무 · 공휴일은 유급휴일 선택 가능",f,new Rectangle(0,24,Width,20),Palette.Muted,TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis);
+ public int Mode;public bool Fixed;
+ public FlatCalendarLegend(){AccessibleName="출근·계약·비교일은 별도 저장하며 주휴일은 지정 요일에 표시";}
+ protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));string[] names=Mode==1?new[]{"약정 근무일","약정 비근무일"}:Mode==2?new[]{Fixed?"통상 주 근무요일":"확인할 비교근로일","제외일"}:new[]{"근무","비근무","결근","유급휴일","주휴일"};Color[] colors={Palette.Accent,Color.White,Color.FromArgb(255,237,183),Color.FromArgb(220,247,230),Color.White};int part=Width/names.Length;
+  for(int i=0;i<names.Length;i++){int x=i*part;using(var fill=new SolidBrush(colors[i]))g.FillRectangle(fill,x+1,5,13,13);using(var pen=new Pen(i==4?Palette.Accent:Palette.Edge))g.DrawRectangle(pen,x+1,5,13,13);using(var f=new Font("맑은 고딕",9))TextRenderer.DrawText(g,names[i],f,new Rectangle(x+20,0,part-19,24),Palette.Ink,TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis);}
+  string hint=Mode==1?"출근 상태를 바꿔도 계약일은 유지됩니다.":Mode==2?(Fixed?"고정 비례 계산에 쓰는 통상 주 근무요일입니다.":"공휴일 제외 기준 · 비교일을 바꾸면 즉시 재계산합니다."):"출근: 근무 → 결근 → 미확인 · 계약·비교일은 위에서 전환";
+  using(var f=new Font("맑은 고딕",8))TextRenderer.DrawText(g,hint,f,new Rectangle(0,24,Width,20),Palette.Muted,TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis);
  }
 }
 class FlatPayrollSummary:PayrollSummary {
@@ -21,7 +23,7 @@ class FlatPayrollSummary:PayrollSummary {
   for(int i=0;i<pay.Count;i++)Row(g,pay[i].Name=="기본급"?"근무·유급임금":pay[i].Name,pay[i].Amount,new Rectangle(0,30+i*rowHeight,width,rowHeight),false);
   for(int i=0;i<deduct.Count;i++)Row(g,deduct[i].Name,deduct[i].Amount,new Rectangle(width+gap,30+i*rowHeight,width,rowHeight),false);
   Row(g,"지급 합계",result.Gross,new Rectangle(0,totalY,width,30),true);Row(g,"공제 합계",result.Deductions,new Rectangle(width+gap,totalY,width,30),true);
-  var net=new Rectangle(0,Height-46,Width,46);using(var fill=new SolidBrush(Palette.NetTint))g.FillRectangle(fill,net);using(var f=new Font("맑은 고딕",12,FontStyle.Bold))TextRenderer.DrawText(g,"실지급액",f,new Rectangle(15,net.Top,180,46),Palette.Accent,TextFormatFlags.VerticalCenter);using(var f=new Font("맑은 고딕",19,FontStyle.Bold))TextRenderer.DrawText(g,result.Net.ToString("N0")+"원",f,new Rectangle(Width-330,net.Top,312,46),Palette.Accent,TextFormatFlags.Right|TextFormatFlags.VerticalCenter);
+  var net=new Rectangle(0,Height-46,Width,46);using(var fill=new SolidBrush(Palette.NetTint))g.FillRectangle(fill,net);using(var f=new Font("맑은 고딕",12,FontStyle.Bold))TextRenderer.DrawText(g,result.Ready?"실지급액":"예상 실지급액 · 미확정",f,new Rectangle(15,net.Top,290,46),Palette.Accent,TextFormatFlags.VerticalCenter);using(var f=new Font("맑은 고딕",19,FontStyle.Bold))TextRenderer.DrawText(g,result.Net.ToString("N0")+"원",f,new Rectangle(Width-330,net.Top,312,46),Palette.Accent,TextFormatFlags.Right|TextFormatFlags.VerticalCenter);
  }
 }
 class CalendarTotals:Control {
@@ -45,7 +47,7 @@ public partial class MainForm {
   weeklyHeading.SetBounds(right,8,areaWidth,28);weeks.SetBounds(right,62,areaWidth,40+Math.Max(1,weeks.Rows.Count)*40+3);holidayFormula.SetBounds(right,weeks.Bottom+14,areaWidth,areaHeight-weeks.Bottom-28);
   calendarLegend.SetBounds(18,calendar.Bottom+12,calendar.Width,44);return cell;
  }
- internal void LoadFlatExample(){r=HolidayTests.Example();r.Name="김대체";r.Institution="예시학교";r.PaymentDate=new DateTime(2026,10,25);r.Theme=0;LoadUI();automaticUpdates.Checked=false;RefreshAll();tabs.SelectedIndex=1;SyncNavigation();dirty=false;}
+ internal void LoadFlatExample(){r=HolidayTests.Example();WorkPlan.FromLegacy(r);r.Name="김대체";r.Institution="예시학교";r.PaymentDate=new DateTime(2026,10,25);r.Theme=0;LoadUI();automaticUpdates.Checked=false;RefreshAll();tabs.SelectedIndex=1;SyncNavigation();dirty=false;}
  ComboBox outputFolderKind;Label outputFolderCaption;
  void BuildOutputFolderBar(Card card){var label=L("저장 위치",9);label.SetBounds(20,253,75,28);card.Controls.Add(label);outputFolderKind=Combo(DocumentNames,155);outputFolderKind.SetBounds(100,254,155,28);card.Controls.Add(outputFolderKind);outputFolderCaption=L("",9);outputFolderCaption.AutoEllipsis=true;outputFolderCaption.SetBounds(265,253,card.Width-435,28);outputFolderCaption.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;card.Controls.Add(outputFolderCaption);outputFolderKind.SelectedIndexChanged+=(s,e)=>UpdateOutputFolderCaption();var open=B("폴더 열기",()=>{int index=outputFolderKind.SelectedIndex;string folder=outputFolders[index].Text.Trim();if(!Path.IsPathRooted(folder)){OutputMessage("설정에서 올바른 저장 폴더를 지정하세요.");return;}try{Directory.CreateDirectory(folder);System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(folder){UseShellExecute=true});}catch(Exception ex){OutputMessage("저장 폴더를 열지 못했습니다.\n"+ex.Message);}},125);open.SetBounds(card.Width-145,252,125,30);open.Anchor=AnchorStyles.Top|AnchorStyles.Right;card.Controls.Add(open);}
  void UpdateOutputFolderCaption(){if(outputFolderCaption==null||outputFolderKind==null||outputFolders[outputFolderKind.SelectedIndex]==null)return;string folder=outputFolders[outputFolderKind.SelectedIndex].Text.Trim();try{outputFolderCaption.Text=String.IsNullOrWhiteSpace(folder)?"설정에서 저장 폴더 지정":new DirectoryInfo(folder).Name;}catch{outputFolderCaption.Text="저장 폴더 확인 필요";}}

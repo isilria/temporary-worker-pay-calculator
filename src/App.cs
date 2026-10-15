@@ -12,7 +12,7 @@ namespace ShortPay {
 static class Program {
  [STAThread] static void Main(string[] args){
   ExcelReports.RegisterDependencies();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
-  try {if(args.Contains("--logic-test")){LogicAuditTests.Run(args.Last());return;}if(args.Contains("--holiday-test")){HolidayTests.Run(args.Last());return;}if(args.Contains("--update-live-test")){UpdateTests.Live(args.Last());return;}if(args.Contains("--update-test")){UpdateTests.Run(args.Last());return;}if(args.Contains("--xlsx-test")){ExcelTests.Run(args.Last());return;}if(args.Contains("--test")){Tests.Run(args.Last());return;}Application.Run(new MainForm());}
+  try {if(args.Contains("--basis-test")){WorkPlanTests.Run(args.Last());return;}if(args.Contains("--logic-test")){LogicAuditTests.Run(args.Last());return;}if(args.Contains("--holiday-test")){HolidayTests.Run(args.Last());return;}if(args.Contains("--update-live-test")){UpdateTests.Live(args.Last());return;}if(args.Contains("--update-test")){UpdateTests.Run(args.Last());return;}if(args.Contains("--xlsx-test")){ExcelTests.Run(args.Last());return;}if(args.Contains("--test")){Tests.Run(args.Last());return;}Application.Run(new MainForm());}
   catch(Exception ex){File.WriteAllText(Path.Combine(Path.GetTempPath(),"ShortPay-error.txt"),ex.ToString());MessageBox.Show("실행 중 오류가 발생했습니다.\n"+ex.Message,"임금 도우미");}
  }
 }
@@ -59,7 +59,7 @@ public partial class MainForm:Form {
   DoubleBuffered=true;
   using(var sr=new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("jobs.json")))jobs=Engine.Parse<List<Job>>(sr.ReadToEnd());
   Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-  Text="1개월 미만 대체근로자 임금계산기 · "+Assembly.GetExecutingAssembly().GetName().Version.ToString(2);Font=new Font("맑은 고딕",10);StartPosition=FormStartPosition.CenterScreen;ClientSize=new Size(1280,800);MinimumSize=new Size(1200,800);AutoScaleMode=AutoScaleMode.Dpi;BackColor=Palette.Background;
+  Text="1개월 미만 대체근로자 임금계산기 · "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3);Font=new Font("맑은 고딕",10);StartPosition=FormStartPosition.CenterScreen;ClientSize=new Size(1280,800);MinimumSize=new Size(1200,800);AutoScaleMode=AutoScaleMode.Dpi;BackColor=Palette.Background;
   r.Start=DateTime.Today;r.End=r.Start.AddDays(6);Build();LoadUI();loading=false;RefreshAll();dirty=false;
   Shown+=(a,e)=>{BeginInvoke((Action)(()=>{PerformLayout();SyncNavigation();Invalidate(true);Update();job.Refresh();}));if(!Environment.GetCommandLineArgs().Any(arg=>arg.EndsWith("-test"))&&automaticUpdates.Checked)CheckUpdates(false);};
   FormClosing+=CloseSession;
@@ -78,7 +78,7 @@ public partial class MainForm:Form {
   var sub=L("1개월 미만 · 2026 기준",9);sub.SetBounds(20,100,180,26);sub.ForeColor=Palette.Muted;sidebar.Controls.Add(sub);
   string[] nav={"대상자 · 계약","근무일 · 주휴","임금 · 공제","명세서 · 신청서","직종 · 계산 기준","설정"};for(int i=0;i<nav.Length;i++){int idx=i;var b=B(nav[i],()=>tabs.SelectedIndex=idx,170);b.MenuIcon=i;b.SetBounds(16,162+i*52,172,43);sidebar.Controls.Add(b); navButtons.Add(b);}
   theme=Combo(new[]{"기본 파랑","민트","라일락","파랑","살구","장미"},165);theme.SelectedIndexChanged+=(s,e)=>{if(loading)return;r.Theme=theme.SelectedIndex;ApplyTheme();dirty=true;};
-  var tag=L("ver. "+Assembly.GetExecutingAssembly().GetName().Version.ToString(2)+"\ne-mail: isilria@ice.go.kr",9);tag.SetBounds(18,485,184,58);sidebar.Controls.Add(tag);
+  var tag=L("ver. "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3)+"\ne-mail: isilria@ice.go.kr",9);tag.SetBounds(18,485,184,58);sidebar.Controls.Add(tag);
   main=new Panel{Dock=DockStyle.Fill,Padding=new Padding(20,12,20,12),BackColor=Palette.Background};Controls.Add(main);main.BringToFront();
   var top=new Panel{Dock=DockStyle.Top,Height=96};var title=L("1개월 미만 대체근로자 임금계산기",18,true);title.SetBounds(0,0,590,38);title.ForeColor=Palette.Ink;top.Controls.Add(title);BuildContextStrip(top);
   notice=L("본 프로그램은 개인 제작 프로그램입니다. 사용 전 현행 지침과 규정을 확인하시기 바랍니다",8);notice.Dock=DockStyle.Bottom;notice.Height=24;notice.Padding=new Padding(18,0,0,0);notice.ForeColor=Palette.Muted;notice.BackColor=Palette.Background;Controls.Add(notice);notice.SendToBack();
@@ -95,7 +95,7 @@ public partial class MainForm:Form {
   content=Page(0);var c=Section(content,"대상자 정보",282);
   person=TextInput();identity=TextInput();bank=TextInput();account=TextInput();holder=TextInput();reason=TextInput();original=TextInput();
   identityMode=Combo(new[]{"생년월일","주민등록번호"});relation=Combo(new[]{"계약 유지","별도"});
-  job=Combo(jobs.Select(x=>x.name).ToArray());job.SelectedIndexChanged+=(s,e)=>{if(loading)return;loading=true;var j=jobs[job.SelectedIndex];r.Meal=j.meal;r.Allowance=j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value);Set("base",j.@base);Set("meal",j.meal);Set("allowance",j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value));hours.Maximum=Engine.IsGuard(j)?24:8;Set("hours",Engine.IsGuard(j)?8.5m:8);Set("weekend",12);Set("nightDays",0);Set("publicDays",0);UpdateContractFields();r.JobIndex=job.SelectedIndex;Engine.Fill(r,j);loading=false;Changed();};
+  job=Combo(jobs.Select(x=>x.name).ToArray());job.SelectedIndexChanged+=(s,e)=>{if(loading)return;loading=true;var j=jobs[job.SelectedIndex];r.Meal=j.meal;r.Allowance=j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value);Set("base",j.@base);Set("meal",j.meal);Set("allowance",j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value));hours.Maximum=Engine.IsGuard(j)?24:8;Set("hours",Engine.IsGuard(j)?8.5m:8);Set("weekend",12);Set("nightDays",0);Set("publicDays",0);UpdateContractFields();r.JobIndex=job.SelectedIndex;PreserveAttendanceAfterDates();loading=false;Changed();};
   Fields(c,42,Field("직종",job,315),Field("대상자 성명",person,215),Field("생년월일 / 주민번호",identity,310));
   Fields(c,116,Field("은행명",bank,215),Field("계좌번호",account,415),Field("예금주",holder,210));
   Fields(c,190,Field("원근로자 성명",original,260),Field("사유",reason,588));
@@ -106,7 +106,7 @@ public partial class MainForm:Form {
  void ResetReview(){if(!manual.Checked)return;loading=true;manual.Checked=false;loading=false;r.Override=false;}
  void DateChanged(){if(loading)return;r.Start=start.Value.Date;r.End=end.Value.Date;
   if(r.End<r.Start){loading=true;end.Value=r.Start;r.End=r.Start;loading=false;}
-  ResetReview();Engine.Fill(r,jobs[r.JobIndex]);loading=true;year.SelectedItem=r.Start.Year.ToString();month.SelectedIndex=r.Start.Month-1;loading=false;Changed();
+  ResetReview();PreserveAttendanceAfterDates();loading=true;year.SelectedItem=r.Start.Year.ToString();month.SelectedIndex=r.Start.Month-1;loading=false;Changed();
  }
 
  bool CheckContractDeparture(){
@@ -115,7 +115,7 @@ public partial class MainForm:Form {
   DateTime corrected=new DateTime(r.Start.Year,r.Start.Month,DateTime.DaysInMonth(r.Start.Year,r.Start.Month));
   if(corrected>=Engine.OneMonthEnd(r.Start))corrected=Engine.OneMonthEnd(r.Start).AddDays(-1);
   ContractAlert("계약기간이 1개월 이상으로 설정되어 있습니다.\n종료일을 "+corrected.ToString("yyyy-MM-dd")+"로 조정했습니다. 계약기간을 확인해 주세요.");
-  loading=true;end.Value=corrected;r.End=corrected;loading=false;Engine.Fill(r,jobs[r.JobIndex]);Changed();return false;
+  loading=true;end.Value=corrected;r.End=corrected;loading=false;PreserveAttendanceAfterDates();Changed();return false;
  }
 
  void WarnContractPeriod(){string message=r.End<r.Start?"":Engine.ContractWarning(r);if(message!=""&&message!=lastContractWarning)ContractAlert(message);lastContractWarning=message;}
@@ -133,6 +133,7 @@ public partial class MainForm:Form {
   holidayFormula=L("",9);holidayFormula.SetBounds(498,345,440,125);holidayFormula.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;c.Controls.Add(holidayFormula);
   manual=new CheckBox();note=TextInput();Num("holiday",80,2);removeMode=Combo(new[]{"비근무","결근","유급"});
   calendarTotals=new CalendarTotals{Width=960,Height=70,Margin=new Padding(0,0,0,10)};p.Controls.Add(calendarTotals);
+  BuildPlanControls(c);
   c.Resize+=(s,e)=>{if(!calendarLayoutBusy&&calendar!=null)DrawCalendar();};
  }
 
@@ -193,18 +194,19 @@ public partial class MainForm:Form {
   ((PayrollSummary)summary).UpdateResult(r,result);UpdateAllowanceInputs();
   if(Engine.ContractWarning(r)!="")summary.Text="계약기간 확인 필요 · 단기 인건비 계산 중지";
 
-  weeks.Rows.Clear();int wi=0;foreach(var w in result.Weeks){wi++;weeks.Rows.Add(wi+"주차\n"+w.Period,r.Days.Count(d=>d.Value==1&&String.CompareOrdinal(d.Key,Engine.Key(w.Start))>=0&&String.CompareOrdinal(d.Key,Engine.Key(w.End))<=0)+"일",w.Holiday.ToString("0.####")+"시간",w.Holiday>0?"지급":w.Status);}weeks.Height=40+Math.Max(1,weeks.Rows.Count)*40+3;weeks.ClearSelection();
+  weeks.Rows.Clear();int wi=0;foreach(var w in result.Weeks){wi++;weeks.Rows.Add(wi+"주차\n"+w.Period,r.Days.Count(d=>d.Value==1&&String.CompareOrdinal(d.Key,Engine.Key(w.Start))>=0&&String.CompareOrdinal(d.Key,Engine.Key(w.End))<=0)+"일",w.Holiday.ToString("0.####")+"시간",w.Holiday>0?(result.Ready?"지급":"예상"):w.Status);}weeks.Height=40+Math.Max(1,weeks.Rows.Count)*40+3;weeks.ClearSelection();
   holidayFormula.Top=weeks.Bottom+15;
-  holidayFormula.Text="주휴 계산 근거\n"+String.Join("\n",result.Weeks.Select((w,i)=>new {w,i}).Where(x=>x.w.Holiday>0).Select(x=>(x.i+1)+"주차  "+x.w.ReferenceHours.ToString("0.##")+"시간 ÷ "+x.w.ReferenceDays+"일 = "+x.w.Holiday.ToString("0.####")+"시간"))+"\n주휴 합계 "+result.HolidayHours.ToString("0.####")+"시간\n산정시점 기준 · 최대 4주 평균";
+  holidayFormula.Text="주휴 계산 근거"+"\n"+String.Join("\n",result.Weeks.Select((w,i)=>new {w,i}).Where(x=>x.w.Holiday>0).Select(x=>(x.i+1)+"주차  "+x.w.BasisDescription))+"\n주휴 합계 "+result.HolidayHours.ToString("0.####")+"시간\n"+WorkPlan.Summary(r);
 
   notice.Text=result.Warnings.Count>0?"확인 필요: "+result.Warnings[0]:String.IsNullOrEmpty(lastImportNote)?"기관 설정은 자동 저장됩니다. 계산 입력은 종료 시 초기화됩니다. 이어서 작업하려면 자료 또는 임금산정표를 저장하세요.":lastImportNote;
   reference.Text="최저임금: "+r.Minimum.ToString("N2")+"원  |  통상시급: "+result.OrdinaryHourly.ToString("N2")+"원\n\n적용기준: "+(r.HourlyOverride>0?"직접 지정 ("+result.Hourly.ToString("N2")+"원)":result.OrdinaryHourly>=r.Minimum?"통상시급":"최저임금");
   if(Engine.IsGuard(jobs[r.JobIndex]))holidayFormula.Text="당직전담실무원 · 주휴수당 미산정\n월 임금산정시간 "+result.MonthlyHours+"시간\n평일 "+r.Hours+"시간 / 주말 "+r.WeekendHours+"시간\n야간가산: 지급일 × 1.5시간 × 통상시급 × 50%";
-  employmentLine.Text=r.Employment?"고용보험 자동 공제  "+result.Employment.ToString("N0")+"원 ("+r.Rate+"%)":"고용보험 적용 제외 · 0원";UpdateContextStrip();if(calendarTotals!=null)calendarTotals.UpdateResult(result);DrawCalendar();
+  employmentLine.Text=r.Employment?"고용보험 자동 공제  "+result.Employment.ToString("N0")+"원 ("+r.Rate+"%)":"고용보험 적용 제외 · 0원";UpdateContextStrip();if(calendarTotals!=null)calendarTotals.UpdateResult(result);RefreshPlanControls();DrawCalendar();
  }
 
  Label contractCaption;
  void DrawCalendar(){
+  var planLegend=calendarLegend as FlatCalendarLegend;if(planLegend!=null&&calendarEditMode!=null){planLegend.Mode=Engine.IsGuard(jobs[r.JobIndex])?0:calendarEditMode.SelectedIndex;planLegend.Fixed=r.ScheduleMode==0;planLegend.Invalidate();}
   if(calendar==null||calendarLayoutBusy)return;calendarLayoutBusy=true;contractCaption.Text=r.Start.Year==r.End.Year?r.Start.ToString("yyyy년 M월")+(r.Start.Month==r.End.Month?"":" ~ "+r.End.ToString("M월")):r.Start.ToString("yyyy년 M월")+" ~ "+r.End.ToString("yyyy년 M월");calendar.SuspendLayout();
   while(calendar.Controls.Count>0){var c=calendar.Controls[0];calendar.Controls.Remove(c);c.Dispose();}calendar.ColumnStyles.Clear();calendar.RowStyles.Clear();
   DateTime first=r.Start.Date.AddDays(-(int)r.Start.DayOfWeek);int count=Math.Max(1,Math.Min(6,((r.End.Date-first).Days+7)/7));calendar.RowCount=count+1;int cell=LayoutFlatCalendar(count);
@@ -214,8 +216,8 @@ public partial class MainForm:Form {
   for(int row=0;row<count;row++){
    DateTime begin=first.AddDays(row*7);var shown=Enumerable.Range(0,7).Select(i=>begin.AddDays(i)).Where(d=>d>=r.Start.Date&&d<=r.End.Date).ToList();
    var label=L(String.Join("\n",shown.Select(d=>d.Month).Distinct().Where(m=>seenMonths.Add(m)).Select(m=>m+"월")),8,true);label.Dock=DockStyle.Fill;label.TextAlign=ContentAlignment.MiddleCenter;calendar.Controls.Add(label,0,row+1);
-   for(int i=0;i<7;i++){DateTime d=begin.AddDays(i);if(d<r.Start.Date||d>r.End.Date)continue;int state;r.Days.TryGetValue(Engine.Key(d),out state);bool paid=result!=null&&result.Weeks.Any(w=>w.Holiday>0&&w.End==d);var b=new DayButton{Dock=DockStyle.Fill,Margin=new Padding(2),State=state,Pink=paid||Holidays.Name(d)!="",WeeklyHoliday=paid,PublicHoliday=Holidays.Name(d)!="",Text=d.Day==1?d.Month+"/1":d.Day.ToString(),AccessibleName=d.ToString("yyyy-MM-dd")+" "+(state==1?"근무":state==2?"결근":state==4?"유급휴일":"비근무")+(paid?" 주휴":"")};
-    b.Click+=(sender,e)=>{int old;r.Days.TryGetValue(Engine.Key(d),out old);if(old==1)r.Days[Engine.Key(d)]=2;else if(old==2&&Holidays.Name(d)!=""&&!Engine.IsGuard(jobs[r.JobIndex]))r.Days[Engine.Key(d)]=4;else if(old==2||old==3||old==4)r.Days.Remove(Engine.Key(d));else r.Days[Engine.Key(d)]=1;ResetReview();Changed();};calendar.Controls.Add(b,i+1,row+1);
+   for(int i=0;i<7;i++){DateTime d=begin.AddDays(i);if(d<r.Start.Date||d>r.End.Date)continue;int state;r.Days.TryGetValue(Engine.Key(d),out state);bool prescribed=WorkPlan.Contract(r).ContainsKey(d),guard=Engine.IsGuard(jobs[r.JobIndex]);int editMode=guard?0:calendarEditMode.SelectedIndex;bool rest=editMode==0&&!guard&&result!=null&&result.Weeks.Any(w=>w.Complete&&w.RestDate==d);var b=new DayButton{Dock=DockStyle.Fill,Margin=new Padding(2),State=editMode==1?(prescribed?1:0):editMode==2?(WorkPlan.Comparison(r).ContainsKey(d)?1:0):state,Pink=rest||Holidays.Name(d)!="",WeeklyHoliday=rest,UnknownAttendance=editMode==0&&!guard&&prescribed&&state==0&&Holidays.Name(d)=="",PublicHoliday=Holidays.Name(d)!="",Text=d.Day==1?d.Month+"/1":d.Day.ToString(),AccessibleName=CalendarDayText(d,state,prescribed)+(rest?" 지정 주휴일":"")};
+    planTips.SetToolTip(b,CalendarDayText(d,state,prescribed)+(Holidays.Name(d)==""?"":" / "+Holidays.Name(d))+(rest?" / 지정한 주휴일 (지급 여부는 오른쪽 판정 참조)":""));b.Click+=(sender,e)=>EditCalendarDay(d);calendar.Controls.Add(b,i+1,row+1);
    }
   }calendar.ResumeLayout();calendarLayoutBusy=false;
  }
