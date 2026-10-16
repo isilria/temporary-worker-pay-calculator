@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Drawing;
 using System.Windows.Forms;
@@ -10,13 +10,13 @@ public partial class MainForm {
  static readonly string[] DocumentNames={"임금산정표","급여명세서","인건비 신청서"};
  static string DefaultOutputFolder(int index){return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),"대체근로자 인건비",DocumentNames[index]);}
  void BuildStorageSettings(Control page){
-  var card=Section(page,"저장 경로 설정",184);
-  for(int i=0;i<3;i++){int index=i;var label=L(DocumentNames[i],9);label.SetBounds(20,37+i*35,120,30);card.Controls.Add(label);
-   var box=new Card{Input=true,Padding=new Padding(10,7,10,3),Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};box.SetBounds(145,37+i*35,650,31);card.Controls.Add(box);
+  var card=Section(page,"저장 경로 설정",154);
+  for(int i=0;i<3;i++){int index=i;var label=L(DocumentNames[i],9);label.SetBounds(20,31+i*29,120,30);card.Controls.Add(label);
+   var box=new Card{Input=true,Padding=new Padding(10,7,10,3),Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};box.SetBounds(145,31+i*29,650,31);card.Controls.Add(box);
    var input=new TextBox{Text=DefaultOutputFolder(i),BorderStyle=BorderStyle.None,Dock=DockStyle.Fill,BackColor=Palette.Soft,AccessibleName=DocumentNames[i]+" 저장 폴더"};outputFolders[i]=input;box.Controls.Add(input);input.TextChanged+=(s,e)=>ScheduleSettingsSave();
-   var browse=B("폴더 선택",()=>ChooseOutputFolder(index),125);browse.SetBounds(810,37+i*35,125,31);browse.Anchor=AnchorStyles.Top|AnchorStyles.Right;card.Controls.Add(browse);
+   var browse=B("폴더 선택",()=>ChooseOutputFolder(index),125);browse.SetBounds(810,31+i*29,125,31);browse.Anchor=AnchorStyles.Top|AnchorStyles.Right;card.Controls.Add(browse);
   }
-  openGenerated=new CheckBox{Text="생성 파일 바로 실행",AutoSize=true,BackColor=Color.Transparent};openGenerated.SetBounds(22,146,270,27);openGenerated.CheckedChanged+=(s,e)=>ScheduleSettingsSave();card.Controls.Add(openGenerated);
+  openGenerated=new CheckBox{Text="생성 파일 바로 실행",AutoSize=true,BackColor=Color.Transparent};openGenerated.SetBounds(22,121,270,27);openGenerated.CheckedChanged+=(s,e)=>ScheduleSettingsSave();card.Controls.Add(openGenerated);
  }
  void ChooseOutputFolder(int index){using(var dialog=new FolderBrowserDialog{Description=DocumentNames[index]+" 저장 폴더를 선택하세요.",SelectedPath=outputFolders[index].Text,ShowNewFolderButton=true})if(dialog.ShowDialog(this)==DialogResult.OK){outputFolders[index].Text=dialog.SelectedPath;FlushSettings();}}
  void LoadStorageSettings(Settings settings){string[] paths={settings.WageFolder,settings.PayslipFolder,settings.RequestFolder};for(int i=0;i<3;i++)outputFolders[i].Text=String.IsNullOrWhiteSpace(paths[i])?DefaultOutputFolder(i):paths[i];openGenerated.Checked=settings.OpenGenerated;}

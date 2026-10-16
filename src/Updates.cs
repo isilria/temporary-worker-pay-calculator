@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -38,7 +38,7 @@ static class PayrollUpdates {
 }
 public partial class MainForm {
  CheckBox automaticUpdates;Label updateStatus;SoftButton updateButton;bool updateBusy;
- void BuildUpdateSettings(Control page){var c=Section(page,"업데이트 확인",94);var version=L("현재 버전  "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3),10,true);version.SetBounds(20,32,260,26);c.Controls.Add(version);automaticUpdates=new CheckBox{Text="시작 시 업데이트 확인",Checked=true,AutoSize=true,BackColor=System.Drawing.Color.Transparent};automaticUpdates.SetBounds(318,32,260,28);c.Controls.Add(automaticUpdates);updateButton=B("지금 확인",()=>CheckUpdates(true),150);updateButton.SetBounds(744,28,150,36);updateButton.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(updateButton);updateStatus=L("업데이트 확인 전",9);updateStatus.SetBounds(20,63,870,25);updateStatus.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;c.Controls.Add(updateStatus);}
+ void BuildUpdateSettings(Control page){var c=Section(page,"프로그램 · 공휴일 업데이트",150);var version=L("현재 버전  "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3),10,true);version.SetBounds(20,32,260,26);c.Controls.Add(version);automaticUpdates=new CheckBox{Text="시작 시 프로그램·공휴일 확인",Checked=true,AutoSize=true,BackColor=System.Drawing.Color.Transparent};automaticUpdates.SetBounds(318,32,260,28);c.Controls.Add(automaticUpdates);updateButton=B("지금 확인",()=>CheckUpdates(true),150);updateButton.SetBounds(744,28,150,36);updateButton.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(updateButton);updateStatus=L("업데이트 확인 전",9);updateStatus.SetBounds(20,63,870,25);updateStatus.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;c.Controls.Add(updateStatus);BuildHolidaySettings(c);}
  async void CheckUpdates(bool interactive){
   if(updateBusy)return;updateBusy=true;updateButton.Enabled=false;updateStatus.Text="새 버전을 확인하고 있습니다…";
   try{string source=PayrollUpdates.Source();var info=await Task.Run(()=>PayrollUpdates.Fetch(source));if(IsDisposed)return;

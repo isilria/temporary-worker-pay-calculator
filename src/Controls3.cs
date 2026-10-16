@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.IO;
 using System.Drawing;
@@ -50,11 +50,6 @@ class CalendarPopup:ToolStripDropDown {
  void Draw(){while(days.Controls.Count>0){var c=days.Controls[0];days.Controls.Remove(c);c.Dispose();}title.Text=view.ToString("yyyy년 M월");string[] names={"일","월","화","수","목","금","토"};for(int i=0;i<7;i++)days.Controls.Add(new Label{Text=names[i],Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleCenter},i,0);for(int i=0;i<42;i++){DateTime date=view.AddDays(i-(int)view.DayOfWeek);var b=new DayButton{Text=date.Month==view.Month?date.Day.ToString():"",Dock=DockStyle.Fill,Margin=Padding.Empty,Enabled=date.Month==view.Month,Pink=Holidays.Name(date)!="",Font=new Font("맑은 고딕",10)};b.Click+=(s,e)=>{choose(date);Close();};days.Controls.Add(b,i%7,i/7+1);}}
  public void Show(Control anchor){Show(anchor,new Point(0,anchor.Height+5));}
  protected override void OnPaint(PaintEventArgs e){base.OnPaint(e);using(var p=Palette.Round(new RectangleF(1,1,Width-3,Height-3),12))using(var pen=new Pen(Palette.Edge))e.Graphics.DrawPath(pen,p);}
-}
-static class Holidays {
- // 2026 KASA calendar data. These labels do not decide paid-leave eligibility.
- static Dictionary<string,string> dates=new Dictionary<string,string>{{"01-01","신정"},{"02-16","설 연휴"},{"02-17","설날"},{"02-18","설 연휴"},{"03-01","삼일절"},{"03-02","대체공휴일"},{"05-01","노동절"},{"07-17","제헌절"},{"05-05","어린이날"},{"05-24","부처님오신날"},{"05-25","대체공휴일"},{"06-03","지방선거일"},{"06-06","현충일"},{"08-15","광복절"},{"08-17","대체공휴일"},{"09-24","추석 연휴"},{"09-25","추석"},{"09-26","추석 연휴"},{"10-03","개천절"},{"10-05","대체공휴일"},{"10-09","한글날"},{"12-25","성탄절"}};
- public static string Name(DateTime date){string name;return date.Year==2026&&dates.TryGetValue(date.ToString("MM-dd"),out name)?name:"";}
 }
 public partial class MainForm {
  List<SoftButton> navButtons=new List<SoftButton>();Label employmentLine;

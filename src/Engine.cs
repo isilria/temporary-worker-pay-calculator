@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -14,6 +14,7 @@ public class Record {
  public int UnmannedDay=6; // Saturday=6, Sunday=0; monthly occurrences 1-4
  public int Version=7; public string Id=Guid.NewGuid().ToString(); public string Name="",Identity="",IdentityMode="생년월일",Bank="",Account="",Holder="",Reason="",Institution="",Contact="",OriginalWorker="";
  public int ScheduleMode=0,ContractWeekdays=62,NormalWeekdays=62,WeeklyRestDay=0;public decimal NormalDayHours=8;
+ public string HolidayDataVersion="",HolidayDataFetchedAt="";public Dictionary<string,string> HolidaySnapshot;
  public string ComparisonPeriod="";
  public Dictionary<string,int> ContractDays=new Dictionary<string,int>(),ComparisonDays=new Dictionary<string,int>();
  public int JobIndex=2,Theme=0; public DateTime Start=new DateTime(2026,9,7),End=new DateTime(2026,9,20); public decimal Hours=8;
@@ -114,7 +115,7 @@ public static class Engine {
   bool holidayWork=!guard&&valid.Any(x=>x.Value!=4&&Holidays.Name(x.Key)!="");
   bool invalidHoliday=valid.Any(x=>x.Value==4&&(guard||Holidays.Name(x.Key)==""));
   if(holidayWork)z.Warnings.Add("공휴일 선택을 확인하세요: 유급으로 쉬었으면 유급휴일로 변경하세요. 실제 휴일근로는 가산수당 별도 검토가 필요합니다.");
-  if(invalidHoliday)z.Warnings.Add("유급휴일은 일반직종의 확인된 2026년 공휴일에만 지정할 수 있습니다.");
+  if(invalidHoliday)z.Warnings.Add("유급휴일은 일반직종의 확보된 해당 연도의 공휴일에만 지정할 수 있습니다.");
   if(r.Separate)z.Warnings.Add("날짜별 별도 계약: 근로관계의 계속 여부를 확인하세요.");
   if(j.special&&!guard)z.Warnings.Add("특수운영직군: 시급·주휴·근로시간 기준을 별도로 확인하세요.");
   if(valid.Any(x=>x.Value==3))z.Warnings.Add("유급휴가/휴일 포함: 주휴 인정 및 유급시간을 확인하세요.");
@@ -162,11 +163,12 @@ public static class Engine {
   if(r.Override&&String.IsNullOrWhiteSpace(r.ReviewNote))z.Ready=false;
   if(!r.Employment&&String.IsNullOrWhiteSpace(r.EmploymentExclusionReason)){z.Ready=false;z.Warnings.Add("고용보험 적용 제외 사유를 입력하세요.");}
   if(guard&&(r.NightDays<0||r.NightDays>z.Days||r.PublicHolidayDays<0||r.PublicHolidayDays>z.Days||r.NightHoursPerDay<0||r.NightHoursPerDay>8)){z.Ready=false;z.Warnings.Add("야간·공휴일 지급일은 실제 근무일수 이내로 입력하세요.");}
+  if(!Holidays.Covers(r)){z.Ready=false;z.Warnings.Add("계약연도의 공휴일 자료가 없습니다. 설정에서 공휴일 확인 후 자료 확보 여부를 확인하세요.");}
   return z;
  }
  public static string Json(object o){return new JavaScriptSerializer().Serialize(o);}
  public static T Parse<T>(string s){return new JavaScriptSerializer().Deserialize<T>(s);}
- public static void Save(string path,Record r){string tmp=path+"."+Guid.NewGuid().ToString("N")+".tmp";try{File.WriteAllText(tmp,Json(r),new UTF8Encoding(true));if(File.Exists(path))File.Replace(tmp,path,null);else File.Move(tmp,path);}finally{if(File.Exists(tmp))File.Delete(tmp);}}
+ public static void Save(string path,Record r){Holidays.Stamp(r);string tmp=path+"."+Guid.NewGuid().ToString("N")+".tmp";try{File.WriteAllText(tmp,Json(r),new UTF8Encoding(true));if(File.Exists(path))File.Replace(tmp,path,null);else File.Move(tmp,path);}finally{if(File.Exists(tmp))File.Delete(tmp);}}
  public static Record Load(string path){var r=Parse<Record>(File.ReadAllText(path,Encoding.UTF8));if(r!=null){r.Start=r.Start.Kind==DateTimeKind.Utc?r.Start.ToLocalTime().Date:r.Start.Date;r.End=r.End.Kind==DateTimeKind.Utc?r.End.ToLocalTime().Date:r.End.Date;}if(r!=null&&r.Version>=1&&r.Version<=3){if(r.JobIndex==12)r.JobIndex=11;else if(r.JobIndex>12)r.JobIndex--;if(r.Version==1)r.Override=false;r.Version=5;}if(r!=null&&r.Version==4)r.Version=5;WorkPlan.Upgrade(r);if(r==null||r.Version!=7||(r.UnmannedDay!=0&&r.UnmannedDay!=6)||r.Days==null||r.JobIndex<0||r.JobIndex>=23||r.Theme<0||r.Theme>5||r.Hours<.25m||r.Hours>(r.JobIndex>=21?24:8)||r.WeekendHours<=0||r.WeekendHours>24||r.NightDays<0||r.NightDays>31||r.PublicHolidayDays<0||r.PublicHolidayDays>31||r.NightHoursPerDay<0||r.NightHoursPerDay>8||r.End<r.Start||r.Start.Year<2020||r.End.Year>2050)throw new InvalidDataException("지원하지 않거나 올바르지 않은 저장자료입니다.");
   if(r.RequestRound<1||r.RequestRound>4||r.OutputYear<0||r.OutputYear>2050||r.OutputMonth<0||r.OutputMonth>12)throw new InvalidDataException("출력 설정 범위가 올바르지 않습니다.");
   decimal[] amounts={r.MonthlyBase,r.Meal,r.Allowance,r.ExtraPay,r.Food,r.Tax,r.LocalTax,r.Health,r.Care,r.Pension,r.Other};

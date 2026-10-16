@@ -81,8 +81,11 @@ def main():
     existing={}
     if args.output.exists():
         previous=json.loads(args.output.read_text(encoding='utf-8-sig'))
+        if previous.get('schemaVersion')!=1 or previous.get('sourceUrl')!=SOURCE or previous.get('contentVersion')!=fingerprint(previous['years']):
+            raise ValueError('Existing data failed source or fingerprint validation')
         for year in previous['years']:
             validate_year(year)
+            if year['year'] in existing: raise ValueError('Duplicate stored year')
             existing[year['year']]=year
     # Do not replace anything unless every requested year is complete and valid.
     for year in years:

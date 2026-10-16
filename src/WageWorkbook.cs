@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -20,7 +20,7 @@ public static class WageWorkbook {
  static string Value(ExcelWorksheet ws,string address){var cell=ws.Cells[address];return String.IsNullOrEmpty(cell.Formula)?Convert.ToString(cell.Value,Inv)??"":"="+cell.Formula;}
  static Dictionary<string,string> Snapshot(ExcelWorksheet ws){var data=new Dictionary<string,string>();for(int row=1;row<=35;row++)for(int col=2;col<=16;col++){var cell=ws.Cells[row,col];data[cell.Address]=Value(ws,cell.Address);}return data;}
  internal static byte[] Attach(byte[] workbook,Record record,Job job,ExportOptions options){
-  var copy=Engine.Parse<Record>(Engine.Json(record));
+  var copy=Engine.Parse<Record>(Engine.Json(record));Holidays.Stamp(copy);
   // A wage report has always disclosed birth date only. Do not hide a full resident ID in it.
   copy.Identity=ExcelReports.Birth(copy);copy.IdentityMode="생년월일";
   copy.Recipient=options.Recipient;copy.Manager=options.Manager;copy.RequestRound=options.Round;copy.PaymentDate=options.PaymentDate;

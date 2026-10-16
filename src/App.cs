@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.IO;
 using System.Text;
@@ -12,7 +12,7 @@ namespace ShortPay {
 static class Program {
  [STAThread] static void Main(string[] args){
   ExcelReports.RegisterDependencies();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
-  try {if(args.Contains("--basis-test")){WorkPlanTests.Run(args.Last());return;}if(args.Contains("--logic-test")){LogicAuditTests.Run(args.Last());return;}if(args.Contains("--holiday-test")){HolidayTests.Run(args.Last());return;}if(args.Contains("--update-live-test")){UpdateTests.Live(args.Last());return;}if(args.Contains("--update-test")){UpdateTests.Run(args.Last());return;}if(args.Contains("--xlsx-test")){ExcelTests.Run(args.Last());return;}if(args.Contains("--test")){Tests.Run(args.Last());return;}Application.Run(new MainForm());}
+  try {if(args.Any(a=>a.EndsWith("-test")))Holidays.ResetForTest(Path.Combine(args.Last(),"holiday-cache"));if(args.Contains("--holiday-data-test")){HolidayDataTests.Run(args.Last());return;}if(args.Contains("--holiday-live-test")){HolidayDataTests.Live(args.Last());return;}if(args.Contains("--basis-test")){WorkPlanTests.Run(args.Last());return;}if(args.Contains("--logic-test")){LogicAuditTests.Run(args.Last());return;}if(args.Contains("--holiday-test")){HolidayTests.Run(args.Last());return;}if(args.Contains("--update-live-test")){UpdateTests.Live(args.Last());return;}if(args.Contains("--update-test")){UpdateTests.Run(args.Last());return;}if(args.Contains("--xlsx-test")){ExcelTests.Run(args.Last());return;}if(args.Contains("--test")){Tests.Run(args.Last());return;}Application.Run(new MainForm());}
   catch(Exception ex){File.WriteAllText(Path.Combine(Path.GetTempPath(),"ShortPay-error.txt"),ex.ToString());MessageBox.Show("실행 중 오류가 발생했습니다.\n"+ex.Message,"임금 도우미");}
  }
 }
@@ -61,7 +61,7 @@ public partial class MainForm:Form {
   Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
   Text="1개월 미만 대체근로자 임금계산기 · "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3);Font=new Font("맑은 고딕",10);StartPosition=FormStartPosition.CenterScreen;ClientSize=new Size(1280,800);MinimumSize=new Size(1200,800);AutoScaleMode=AutoScaleMode.Dpi;BackColor=Palette.Background;
   r.Start=DateTime.Today;r.End=r.Start.AddDays(6);Build();LoadUI();loading=false;RefreshAll();dirty=false;
-  Shown+=(a,e)=>{BeginInvoke((Action)(()=>{PerformLayout();SyncNavigation();Invalidate(true);Update();job.Refresh();}));if(!Environment.GetCommandLineArgs().Any(arg=>arg.EndsWith("-test"))&&automaticUpdates.Checked)CheckUpdates(false);};
+  Shown+=(a,e)=>{BeginInvoke((Action)(()=>{PerformLayout();SyncNavigation();Invalidate(true);Update();job.Refresh();}));if(!Environment.GetCommandLineArgs().Any(arg=>arg.EndsWith("-test"))&&automaticUpdates.Checked)CheckStartupUpdates();};
   FormClosing+=CloseSession;
  }
  Label L(string text,int size=10,bool bold=false){return new Label{Text=text,AutoSize=false,Height=27,ForeColor=Palette.Ink,BackColor=Color.Transparent,Font=new Font("맑은 고딕",size,bold?FontStyle.Bold:FontStyle.Regular),TextAlign=ContentAlignment.MiddleLeft};}
@@ -172,7 +172,7 @@ public partial class MainForm:Form {
   var t1=L("2026 직종참조표 · 2025 보수교육 자료 · 1개월 미만 대체근로자 인건비 산출 자료 기준\n당직전담실무원은 평일·주말 근로시간과 야간·공휴일 지급일을 구분하여 산정합니다.",9);t1.Width=930;t1.Height=58;p.Controls.Add(t1);
  }
  readonly List<ThemeTile> themeChoices=new List<ThemeTile>();
- void BuildThemeChoices(Control page){var card=Section(page,"색상 테마 선택",110);var row=new TableLayoutPanel{ColumnCount=6,RowCount=1,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};row.SetBounds(17,39,925,65);for(int i=0;i<6;i++)row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/6));card.Controls.Add(row);Color[] colors={Color.FromArgb(37,99,235),Color.FromArgb(33,128,110),Color.FromArgb(147,84,172),Color.FromArgb(44,117,181),Color.FromArgb(178,105,66),Color.FromArgb(159,86,114)};for(int i=0;i<6;i++){int index=i;var button=new ThemeTile{Text=theme.Items[i].ToString(),ThemeIndex=i,Swatch=colors[i],Dock=DockStyle.Fill,Margin=new Padding(4),Active=i==r.Theme};button.Click+=(a,e)=>theme.SelectedIndex=index;row.Controls.Add(button,i,0);themeChoices.Add(button);}}
+ void BuildThemeChoices(Control page){var card=Section(page,"색상 테마 선택",84);var row=new TableLayoutPanel{ColumnCount=6,RowCount=1,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};row.SetBounds(17,33,925,46);for(int i=0;i<6;i++)row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/6));card.Controls.Add(row);Color[] colors={Color.FromArgb(37,99,235),Color.FromArgb(33,128,110),Color.FromArgb(147,84,172),Color.FromArgb(44,117,181),Color.FromArgb(178,105,66),Color.FromArgb(159,86,114)};for(int i=0;i<6;i++){int index=i;var button=new ThemeTile{Text=theme.Items[i].ToString(),ThemeIndex=i,Swatch=colors[i],Dock=DockStyle.Fill,Margin=new Padding(4),Active=i==r.Theme};button.Click+=(a,e)=>theme.SelectedIndex=index;row.Controls.Add(button,i,0);themeChoices.Add(button);}}
  void BuildSettings(){var p=Page(5);var c=Section(p,"기관 · 신청서 정보",190);recipient=TextInput();manager=TextInput();Fields(c,40,Field("학교 / 기관명",institution,300),Field("수신자 기호",recipient,300));Fields(c,112,Field("담당자명 (신청서)",manager,300),Field("담당자 / 연락처",contact,300));
   foreach(var row in c.Controls.OfType<FlowLayoutPanel>()){row.Width=622;row.Anchor=AnchorStyles.Top|AnchorStyles.Left;}
   var reset=B("설정값 초기화",ResetSettings,190);reset.SetBounds(710,72,190,38);reset.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(reset);
@@ -190,7 +190,7 @@ public partial class MainForm:Form {
  decimal N(string key){return numbers[key].Value;}
  void ReadUI(){r.Name=person.Text;r.Identity=identity.Text;r.IdentityMode=new string(identity.Text.Where(Char.IsDigit).ToArray()).Length>8?"주민등록번호":"생년월일";r.Bank=bank.Text;r.Account=account.Text;r.Holder=holder.Text;r.Reason=reason.Text;r.OriginalWorker=original.Text;r.Institution=institution.Text;r.Contact=contact.Text;r.Recipient=recipient.Text;r.Manager=manager.Text;r.RequestRound=requestRound.SelectedIndex+1;r.PaymentDate=paymentKnown.Checked?(DateTime?)payment.Value.Date:null;r.ExtraIsAdjustment=false;r.OutputYear=0;r.OutputMonth=0;r.JobIndex=job.SelectedIndex;r.Start=start.Value.Date;r.End=end.Value.Date;r.Hours=hours.Value;r.Separate=false;r.Override=false;r.ReviewNote=note.Text;r.HolidayHours=N("holiday");r.MonthlyBase=N("base");if(numbers["meal"].Enabled)r.Meal=N("meal");if(numbers["allowance"].Enabled)r.Allowance=N("allowance");r.Minimum=N("minimum");r.HourlyOverride=N("hourly");r.Within=N("within");r.Overtime=N("overtime");r.ExtraPay=N("extra");r.Food=N("food");r.Tax=N("tax");r.LocalTax=N("local");r.Health=N("health");r.Care=N("care");r.Pension=N("pension");r.Other=0;r.Rate=N("rate");ReadGuardFields();r.RateConfirmed=rateConfirm.Checked;}
  void Changed(){if(loading)return;if(r.Hours!=hours.Value||r.JobIndex!=job.SelectedIndex||r.Separate!=(relation.SelectedIndex==1))ResetReview();dirty=true;ReadUI();RefreshAll();}
- void RefreshAll(){result=Engine.Calculate(r,jobs[r.JobIndex]);summary.Text="임금총액: "+result.Gross.ToString("N0")+"원     공제액: "+result.Deductions.ToString("N0")+"원     실지급액: "+result.Net.ToString("N0")+"원";
+ void RefreshAll(){UpdateHolidayStatus();result=Engine.Calculate(r,jobs[r.JobIndex]);summary.Text="임금총액: "+result.Gross.ToString("N0")+"원     공제액: "+result.Deductions.ToString("N0")+"원     실지급액: "+result.Net.ToString("N0")+"원";
   ((PayrollSummary)summary).UpdateResult(r,result);UpdateAllowanceInputs();
   if(Engine.ContractWarning(r)!="")summary.Text="계약기간 확인 필요 · 단기 인건비 계산 중지";
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -18,10 +18,13 @@ public partial class MainForm {
   var loaded=imported.Record;WageWorkbook.Validate(loaded,jobs);if(!Engine.IsGuard(jobs[loaded.JobIndex]))imported.Note+=" 주휴수당은 현재 산식으로 다시 계산합니다. 이전 자료의 계약 근무일·통상 비교일·주휴일이 계약서와 맞는지 확인하세요.";
   if(imported.Legacy){loaded.Recipient=recipient.Text;loaded.Manager=manager.Text;loaded.Theme=theme.SelectedIndex;if(String.IsNullOrWhiteSpace(loaded.Institution))loaded.Institution=institution.Text;if(String.IsNullOrWhiteSpace(loaded.Contact))loaded.Contact=contact.Text;}
   if(loaded.Other!=0||loaded.Override||loaded.Separate){imported.Note+=" 이전 자료의 기타공제·주휴 수동확정·별도계약 설정은 해제하여 다시 계산했습니다.";loaded.Other=0;loaded.Override=false;loaded.Separate=false;}
+  string holidayImportNote=Holidays.ReconcileLoaded(loaded);
+  if(holidayImportNote!="")imported.Note+="\n"+holidayImportNote;
   // Read and validate completely before replacing the current editing session.
   Engine.Calculate(loaded,jobs[loaded.JobIndex]);
   r=loaded;currentFile=excel?null:path;lastContractWarning="";lastImportNote=imported.Note??"";
   LoadUI();RefreshAll();dirty=false;tabs.SelectedIndex=1;SyncNavigation();
+  if(holidayImportNote!="")HolidayMessage("저장자료의 공휴일 기준 확인",holidayImportNote);
   if(importTooltip==null)importTooltip=new ToolTip{AutoPopDelay=20000,InitialDelay=350};importTooltip.SetToolTip(notice,lastImportNote);
  }
  void ApplySectionColors(){
