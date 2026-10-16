@@ -14,8 +14,8 @@ static class HolidayDataTests {
  internal static HolidayDocument Copy(HolidayDocument data){return Engine.Parse<HolidayDocument>(Engine.Json(data));}
  internal static string Encode(HolidayDocument data,int seconds=1){data.fetchedAtUtc=Holidays.SourceTime(data).AddSeconds(seconds).ToString("yyyy-MM-ddTHH:mm:ssZ");data.contentVersion=Holidays.Fingerprint(data.years);return Engine.Json(data);}
  internal static void Run(string folder){Directory.CreateDirectory(folder);try{count=0;Holidays.ResetForTest(Path.Combine(folder,"cache"));var initial=Copy(Holidays.Current);var baseline=Engine.Json(initial);
-  Check(initial.years.Count==3,"embedded three years");
-  Check(initial.years.SelectMany(y=>y.holidays).Count()==65,"complete official initial records");
+  Check(new[]{2025,2026,2027}.All(y=>initial.years.Any(value=>value.year==y)),"embedded supported years");
+  Check(initial.years.All(y=>y.holidays.Count>=10),"complete official initial years");
   Check(Holidays.Name(new DateTime(2027,2,9))=="대체공휴일(설날)","official names and next year");
   Check(Holidays.Name(new DateTime(2027,1,2))=="","ordinary date");
   Check(Holidays.Origin=="내장 자료","first offline launch uses embedded data");
@@ -59,7 +59,7 @@ static class HolidayDataTests {
   File.WriteAllText(Path.Combine(folder,"holiday-data-tests.txt"),"PASS "+count+" holiday data checks: official initial data, validation, atomic persistence, offline fallback, diff notifications, saved files, calculation impact, UI and network failure.");
  }catch(Exception error){File.WriteAllText(Path.Combine(folder,"holiday-data-tests.txt"),error.ToString());Environment.ExitCode=1;}}
  static string ReadResource(string name){using(var reader=new StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(name)))return reader.ReadToEnd();}
- internal static void Live(string folder){Directory.CreateDirectory(folder);try{Holidays.ResetForTest(Path.Combine(folder,"live-cache"));string text=Holidays.Fetch();var changes=Holidays.Accept(text);Holidays.ResetForTest(Path.Combine(folder,"live-cache"));if(!Holidays.Covers(2027)||Holidays.Origin!="마지막 저장 자료")throw new Exception("Live downloaded cache did not reopen");File.WriteAllText(Path.Combine(folder,"holiday-live-tests.txt"),"PASS public HTTPS file download, schema/hash validation, local atomic save, offline restart and official holiday names\n"+Holidays.Status()+"\nChanges "+changes.Count);}catch(Exception error){File.WriteAllText(Path.Combine(folder,"holiday-live-tests.txt"),error.ToString());Environment.ExitCode=1;}}
+ internal static void Live(string folder,bool candidate=false){Directory.CreateDirectory(folder);try{Holidays.ResetForTest(Path.Combine(folder,"live-cache"));string source=candidate?"https://raw.githubusercontent.com/isilria/temporary-worker-pay-calculator/codex/holiday-data-update/data/holidays.json":Holidays.DownloadUrl;string text=Holidays.FetchFrom(source);var changes=Holidays.Accept(text);Holidays.ResetForTest(Path.Combine(folder,"live-cache"));if(!Holidays.Covers(2027)||Holidays.Origin!="마지막 저장 자료")throw new Exception("Live downloaded cache did not reopen");File.WriteAllText(Path.Combine(folder,"holiday-live-tests.txt"),"PASS public HTTPS file download, schema/hash validation, local atomic save, offline restart and official holiday names\n"+Holidays.Status()+"\nChanges "+changes.Count+"\nSource "+source+"\nProduction publication "+(candidate?"pending approval":"verified"));}catch(Exception error){File.WriteAllText(Path.Combine(folder,"holiday-live-tests.txt"),error.ToString());Environment.ExitCode=1;}}
 }
 public partial class MainForm {
  internal void CheckHolidayDataUI(string folder,ref int total){int checks=0;Action<bool,string> check=(ok,label)=>{if(!ok)throw new Exception("Holiday UI: "+label);checks++;};

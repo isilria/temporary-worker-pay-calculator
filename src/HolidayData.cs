@@ -89,8 +89,10 @@ static class Holidays {
   try{AtomicWrite(Path.Combine(Folder,"check-state.json"),Engine.Json(state));}catch{}
   return changes;
  }
- internal static string Fetch(){
-  ServicePointManager.SecurityProtocol|=SecurityProtocolType.Tls12;var request=(HttpWebRequest)WebRequest.Create(DownloadUrl);request.AllowAutoRedirect=false;request.Timeout=12000;request.ReadWriteTimeout=12000;request.UserAgent="ShortPay-Holiday/1.5";request.CachePolicy=new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
+ internal static string Fetch(){return FetchFrom(DownloadUrl);}
+ internal static string FetchFrom(string source){
+  Uri uri;if(!Uri.TryCreate(source,UriKind.Absolute,out uri)||uri.Scheme!="https"||uri.Host!="raw.githubusercontent.com"||!uri.AbsolutePath.StartsWith("/isilria/temporary-worker-pay-calculator/",StringComparison.Ordinal)||!String.IsNullOrEmpty(uri.Query)||!String.IsNullOrEmpty(uri.Fragment)||!String.IsNullOrEmpty(uri.UserInfo))throw new InvalidDataException("공휴일 자료 주소가 올바르지 않습니다.");
+  ServicePointManager.SecurityProtocol|=SecurityProtocolType.Tls12;var request=(HttpWebRequest)WebRequest.Create(uri);request.AllowAutoRedirect=false;request.Timeout=12000;request.ReadWriteTimeout=12000;request.UserAgent="ShortPay-Holiday/1.5";request.CachePolicy=new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
   using(var response=(HttpWebResponse)request.GetResponse()){if(response.StatusCode!=HttpStatusCode.OK)throw new IOException("공휴일 자료를 받을 수 없습니다.");using(var reader=new StreamReader(response.GetResponseStream(),Encoding.UTF8)){var buffer=new char[524289];int count=0,n;while(count<buffer.Length&&(n=reader.Read(buffer,count,buffer.Length-count))>0)count+=n;if(count>524288)throw new InvalidDataException("공휴일 자료 크기가 제한을 초과했습니다.");string text=new string(buffer,0,count);Parse(text);return text;}}
  }
  internal static string Status(){return String.Join("·",Current.years.OrderBy(y=>y.year).Select(y=>y.year.ToString()))+"년 · "+Origin+" · 원천 확인 "+SourceTime(Current).ToLocalTime().ToString("MM/dd HH:mm")+(String.IsNullOrEmpty(LastCheck)?"":" · PC 확인 "+DateTime.Parse(LastCheck,CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind).ToLocalTime().ToString("MM/dd HH:mm"));}
