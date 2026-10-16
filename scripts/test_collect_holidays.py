@@ -57,7 +57,7 @@ class CollectorTests(unittest.TestCase):
             output=Path(folder)/'holidays.json';output.write_text(json.dumps(DATA),encoding='utf-8')
             with patch('sys.argv',['collect','--output',str(output),'--years','2026']),patch.dict('os.environ',{'HOLIDAY_API_KEY':'test-secret-never-publish'}),patch.object(collector,'fetch_year',return_value=DATA['years'][1]),contextlib.redirect_stdout(io.StringIO()) as printed:
                 collector.main()
-            self.assertEqual(len(json.loads(output.read_text(encoding='utf-8'))['years']),3)
+            self.assertEqual(len(json.loads(output.read_text(encoding='utf-8'))['years']),len(DATA['years']))
             self.assertNotIn('test-secret-never-publish',output.read_text(encoding='utf-8')+printed.getvalue())
 
     def test_api_error_and_incomplete_response(self):
@@ -70,5 +70,64 @@ class CollectorTests(unittest.TestCase):
             with patch.object(collector.urllib.request,'build_opener') as opener:
                 opener.return_value.open.return_value=Response(body)
                 with self.assertRaises(ValueError):collector.fetch_year(2026,'test-only')
+
+    def test_five_year_window_and_year_rollover(self):
+        self.assertEqual(collector.default_years(2026),[2026,2027,2028,2029,2030])
+        self.assertEqual(collector.default_years(2027),[2027,2028,2029,2030,2031])
+
+    def run_future_collection(self,output,fetch):
+        with patch('sys.argv',['collect','--output',str(output),'--years','2026','2027','2028','2029','2030']),patch.dict('os.environ',{'HOLIDAY_API_KEY':'test-only'}),patch.object(collector,'fetch_year',side_effect=fetch),contextlib.redirect_stdout(io.StringIO()):
+            collector.main()
+
+    def future_response(self,year,key):
+        if year in (2029,2030):raise collector.UnavailableYear()
+        if year==2028:
+            item=copy.deepcopy(DATA['years'][1]);item['year']=2028
+            for day in item['holidays']:day['date']='2028'+day['date'][4:]
+            return item
+        return copy.deepcopy(next(y for y in DATA['years'] if y['year']==year))
+
+    def test_empty_future_years_do_not_block_available_years(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output=Path(folder)/'holidays.json';output.write_text(json.dumps(DATA),encoding='utf-8')
+            self.run_future_collection(output,self.future_response)
+            result=json.loads(output.read_text(encoding='utf-8'))
+            self.assertEqual([y['year'] for y in result['years']],[2025,2026,2027,2028])
+            self.assertEqual(result['requestedYears'],[2026,2027,2028,2029,2030])
+            self.assertEqual(result['unavailableYears'],[2029,2030])
+            self.assertEqual(result['contentVersion'],collector.fingerprint(result['years']))
+
+    def test_later_future_publication_is_saved(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output=Path(folder)/'holidays.json';output.write_text(json.dumps(DATA),encoding='utf-8')
+            self.run_future_collection(output,self.future_response)
+            def later(year,key):
+                if year==2029:
+                    item=self.future_response(2028,key);item['year']=2029
+                    for day in item['holidays']:day['date']='2029'+day['date'][4:]
+                    return item
+                return self.future_response(year,key)
+            self.run_future_collection(output,later)
+            result=json.loads(output.read_text(encoding='utf-8'))
+            self.assertIn(2029,[y['year'] for y in result['years']])
+            self.assertEqual(result['unavailableYears'],[2030])
+
+    def test_future_network_failure_preserves_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output=Path(folder)/'holidays.json';original=json.dumps(DATA);output.write_text(original,encoding='utf-8')
+            def fetch(year,key):
+                if year==2030:raise collector.urllib.error.URLError('test offline')
+                return self.future_response(year,key)
+            with self.assertRaises(collector.urllib.error.URLError):self.run_future_collection(output,fetch)
+            self.assertEqual(output.read_text(encoding='utf-8'),original)
+
+    def test_previously_saved_year_disappearing_preserves_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output=Path(folder)/'holidays.json';original=json.dumps(DATA);output.write_text(original,encoding='utf-8')
+            def fetch(year,key):
+                if year==2027:raise collector.UnavailableYear()
+                return self.future_response(year,key)
+            with self.assertRaises(ValueError):self.run_future_collection(output,fetch)
+            self.assertEqual(output.read_text(encoding='utf-8'),original)
 
 if __name__=='__main__':unittest.main()

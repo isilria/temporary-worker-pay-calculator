@@ -14,6 +14,12 @@ import xml.etree.ElementTree as ET
 ENDPOINT = 'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo'
 SOURCE = 'https://www.data.go.kr/data/15012690/openapi.do'
 
+class UnavailableYear(ValueError):
+    """A successful, empty response means the year has not been provided yet."""
+
+def default_years(current):
+    return list(range(current,current+5))
+
 def fingerprint(years):
     text = ''.join(str(y['year']) + '\n' + ''.join(h['date'] + '|' + h['name'] + '\n' for h in sorted(y['holidays'], key=lambda x:x['date'])) for y in sorted(years, key=lambda x:x['year']))
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
@@ -51,6 +57,8 @@ def fetch_year(year, credential):
     items = root.findall('./body/items/item')
     if int(root.findtext('./body/totalCount', '-1')) != len(items):
         raise ValueError('Incomplete API response')
+    if not items:
+        raise UnavailableYear('Official data is not available for this year yet')
     grouped = {}
     for item in items:
         if item.findtext('isHoliday') != 'Y':
@@ -77,7 +85,7 @@ def main():
         credential=candidates[0]
     if not credential: raise ValueError('HOLIDAY_API_KEY is missing')
     current=dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).year
-    years=sorted(set(args.years or [current-1,current,current+1]))
+    years=sorted(set(args.years or default_years(current)))
     existing={}
     if args.output.exists():
         previous=json.loads(args.output.read_text(encoding='utf-8-sig'))
@@ -87,16 +95,25 @@ def main():
             validate_year(year)
             if year['year'] in existing: raise ValueError('Duplicate stored year')
             existing[year['year']]=year
-    # Do not replace anything unless every requested year is complete and valid.
-    for year in years:
-        existing[year]=fetch_year(year,credential)
-    data={'schemaVersion':1,'sourceUrl':SOURCE,'fetchedAtUtc':dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),'years':[existing[year] for year in sorted(existing)]}
+    # Refresh retained years as well; an empty future year is retried next run.
+    # Network/API/partial-data failures still preserve the entire prior file.
+    unavailable=[]
+    for year in sorted(set(years)|set(existing)):
+        try:
+            existing[year]=fetch_year(year,credential)
+        except UnavailableYear:
+            if year in existing or year<=current:
+                raise ValueError('Required or previously stored holiday year became unavailable')
+            unavailable.append(year)
+    if not existing:
+        raise ValueError('No valid official holiday years were received')
+    data={'schemaVersion':1,'sourceUrl':SOURCE,'fetchedAtUtc':dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),'requestedYears':years,'unavailableYears':unavailable,'years':[existing[year] for year in sorted(existing)]}
     data['contentVersion']=fingerprint(data['years'])
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temporary=args.output.with_suffix('.json.tmp')
     temporary.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     os.replace(temporary,args.output)
-    print(json.dumps({'success':True,'years':years,'records':{y['year']:len(y['holidays']) for y in data['years']},'contentVersion':data['contentVersion']},ensure_ascii=False))
+    print(json.dumps({'success':True,'years':years,'unavailableYears':unavailable,'records':{y['year']:len(y['holidays']) for y in data['years']},'contentVersion':data['contentVersion']},ensure_ascii=False))
 
 if __name__=='__main__':
     try:
