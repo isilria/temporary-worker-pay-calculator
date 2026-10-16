@@ -103,5 +103,7 @@ if __name__=='__main__':
         main()
     except Exception as error:
         # Request URLs contain a secret. Do not print exceptions or tracebacks.
-        print('Holiday collection failed ('+type(error).__name__+'). Existing data was preserved.',file=sys.stderr)
+        reason=type(error).__name__
+        if isinstance(error,urllib.error.URLError):reason+=' / '+type(error.reason).__name__
+        print('Holiday collection failed ('+reason+'). Existing data was preserved.',file=sys.stderr)
         sys.exit(1)
