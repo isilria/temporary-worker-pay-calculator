@@ -20,9 +20,10 @@ $parallelChecks+=Start-Process -FilePath (Join-Path $root 'src/build/ReopenTests
 Invoke-Check $exe @('--logic-test',(Join-Path $validation 'logic'))
 Invoke-Check $exe @('--xlsx-test',(Join-Path $validation 'excel'))
 Invoke-Check $exe @('--update-test',(Join-Path $validation 'update'))
+Invoke-Check $exe @('--holiday-data-test',(Join-Path $validation 'holidays'))
 foreach($checkProcess in $parallelChecks){$checkProcess.WaitForExit();$checkProcess.Refresh();if($checkProcess.ExitCode -ne 0){throw ('화면·복원 검사 실패: '+$validation)}}
-$logs=@('basis/work-plan-tests.txt','logic/logic-audit-tests.txt','logic/schedule/schedule-tests.txt','excel/excel-tests.txt','layout/flat-ui-tests.txt','reopen/reopen-tests.txt','reopen/session-tests.txt','update/update-tests.txt')
-$counts=@(122,40,145,164,60,419,25,20)
+$logs=@('basis/work-plan-tests.txt','logic/logic-audit-tests.txt','logic/schedule/schedule-tests.txt','excel/excel-tests.txt','layout/flat-ui-tests.txt','reopen/reopen-tests.txt','reopen/session-tests.txt','update/update-tests.txt','holidays/holiday-data-tests.txt')
+$counts=@(122,40,145,164,60,437,25,20,53)
 $testRecords=@()
 for($index=0;$index -lt $logs.Length;$index++) {
     $record=Get-Content -LiteralPath (Join-Path $validation $logs[$index]) -Raw
@@ -47,7 +48,7 @@ $engineHash=(Get-FileHash -LiteralPath (Join-Path $root 'src/Engine.cs') -Algori
 $verification=@(
     ('대체근로자 임금계산기 정식 '+$version.ToString(3)+' / '+(Get-Date -Format 'yyyy-MM-dd')),
     ('파일 버전 '+$version.ToString(4)+' / Windows .NET Framework / AnyCPU'),
-    '배포 소스로 995개 검사 통과: 교육자료·금액·설정창122, 계산·저장·금액·출력40, 근무편성·수당·저장145, 엑셀·신청서164, 화면60, 복원419, 종료25, 업데이트20. 교육자료122·계산40·편성145·엑셀164·업데이트20은 실제 배포EXE로 실행했습니다.',
+    '배포 소스로 1066개 검사 통과: 교육자료·금액·설정창122, 계산·저장·금액·출력40, 근무편성·수당·저장145, 엑셀·신청서164, 화면60, 복원437, 종료25, 업데이트20, 공휴일갱신53. 교육자료122·계산40·편성145·엑셀164·업데이트20은 실제 배포EXE로 실행했습니다.',
     '달력 왼쪽 세 탭을 계약근무일(연한 하늘) / 근무상황부(설정 테마) / 통상근로자 근무일(회색)로 배치했습니다. 날짜 칸·범례도 같은 역할 색상이며6개 테마에서 실제 렌더링을 검사했습니다.',
     '가상 자료와 격리된 설정을 사용했습니다. 화면은 작업 영역 밖에서 활성화하지 않고 검사했습니다.',
     '신청서 문구는 직종명 → 원근로자 → 원근로자명 순서이며 같은 연도의 종료일은 월·일만 표시합니다.',
@@ -59,27 +60,30 @@ $verification=@(
     '',
     '실제 검사 기록:'
 )+$testRecords+@('',('EXE SHA256 '+$hash))
-$verification | Set-Content -LiteralPath (Join-Path $artifacts 'validation-1.4.txt') -Encoding UTF8
-Copy-Item -LiteralPath (Join-Path $artifacts 'validation-1.4.txt') -Destination (Join-Path $root 'src/검증결과.txt')
+$verification | Set-Content -LiteralPath (Join-Path $artifacts 'validation-1.5.txt') -Encoding UTF8
+Copy-Item -LiteralPath (Join-Path $artifacts 'validation-1.5.txt') -Destination (Join-Path $root 'src/검증결과.txt')
 Copy-Item -LiteralPath (Join-Path $root 'README.md') -Destination (Join-Path $artifacts '사용안내.md')
 Copy-Item -LiteralPath (Join-Path $root 'CHANGELOG.md') -Destination (Join-Path $artifacts '변경내용.md')
 Copy-Item -LiteralPath (Join-Path $root 'src/달력탭_변경안내.md') -Destination $artifacts
+Copy-Item -LiteralPath (Join-Path $root 'src/공휴일_업데이트_안내.md') -Destination $artifacts
+Copy-Item -LiteralPath (Join-Path $validation 'holidays/공휴일_설정화면.png') -Destination (Join-Path $artifacts '화면_공휴일설정.png')
 Copy-Item -LiteralPath (Join-Path $validation 'basis/달력탭_1.png') -Destination (Join-Path $artifacts '화면_계약근무일.png')
 Copy-Item -LiteralPath (Join-Path $validation 'basis/달력탭_테마연동.png') -Destination (Join-Path $artifacts '화면_근무상황부_테마.png')
 Copy-Item -LiteralPath (Join-Path $root 'src/주휴수당_재검토_결과.md') -Destination $artifacts
 Copy-Item -LiteralPath (Join-Path $validation 'basis/education-임금산정표.xlsx') -Destination (Join-Path $artifacts '교육자료예시_주휴5시간.xlsx')
 Copy-Item -LiteralPath (Join-Path $validation 'logic/임금산정표.xlsx') -Destination (Join-Path $artifacts '복원예시_주휴19.2시간.xlsx')
 Copy-Item -LiteralPath (Join-Path $validation 'excel/신청서_표기수정_예시.xlsx') -Destination (Join-Path $artifacts '신청서_표기수정_예시.xlsx')
-$manifest=[ordered]@{appId='shortpay';version=$version.ToString(4);url="https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/$tag";notes='달력 세 탭 적용: 계약근무일 하늘색, 근무상황부 설정 테마 연동, 통상근로자 근무일 회색. 주휴 계산·저장 복원은 유지합니다.';downloadUrl="https://github.com/isilria/temporary-worker-pay-calculator/releases/download/$tag/$exeName";sha256=$hash}
+$manifest=[ordered]@{appId='shortpay';version=$version.ToString(4);url="https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/$tag";notes='공식 공휴일 자료 갱신, 오프라인 저장·복구, 날짜·이름 변경 안내, 저장자료의 공휴일 기준 추적을 추가했습니다.';downloadUrl="https://github.com/isilria/temporary-worker-pay-calculator/releases/download/$tag/$exeName";sha256=$hash}
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $artifacts 'latest.json') -Encoding UTF8
 foreach($name in @('사용안내.md','변경내용.md','주휴수당_재검토_결과.md','교육자료예시_주휴5시간.xlsx','복원예시_주휴19.2시간.xlsx','신청서_표기수정_예시.xlsx')){Copy-Item -LiteralPath (Join-Path $artifacts $name) -Destination $stage}
-Copy-Item -LiteralPath (Join-Path $artifacts 'validation-1.4.txt') -Destination (Join-Path $stage '검증결과.txt')
-foreach($name in @('달력탭_변경안내.md','화면_계약근무일.png','화면_근무상황부_테마.png')){Copy-Item -LiteralPath (Join-Path $artifacts $name) -Destination $stage}
+Copy-Item -LiteralPath (Join-Path $artifacts 'validation-1.5.txt') -Destination (Join-Path $stage '검증결과.txt')
+foreach($name in @('달력탭_변경안내.md','공휴일_업데이트_안내.md','화면_공휴일설정.png','화면_계약근무일.png','화면_근무상황부_테마.png')){Copy-Item -LiteralPath (Join-Path $artifacts $name) -Destination $stage}
 Get-ChildItem -LiteralPath (Join-Path $root 'src') | Where-Object {$_.Name -ne 'build'} | Copy-Item -Destination (Join-Path $sourceStage 'src') -Recurse
 foreach($name in @('README.md','RELEASE.md','CHANGELOG.md','package.ps1','.gitignore')){Copy-Item -LiteralPath (Join-Path $root $name) -Destination $sourceStage}
+foreach($name in @('data','scripts','.github')){Copy-Item -LiteralPath (Join-Path $root $name) -Destination $sourceStage -Recurse}
 Copy-Item -LiteralPath (Join-Path $artifacts 'latest.json') -Destination $sourceStage
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath (Join-Path $artifacts ('ShortTermPayroll-'+$display+'-windows.zip')) -CompressionLevel Optimal
 Compress-Archive -Path (Join-Path $sourceStage '*') -DestinationPath (Join-Path $artifacts ('ShortTermPayroll-'+$display+'-source.zip')) -CompressionLevel Optimal
 Get-ChildItem -LiteralPath $artifacts -File | Where-Object {$_.Name -ne 'SHA256SUMS.txt'} | Sort-Object Name | ForEach-Object {((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())+'  '+$_.Name} | Set-Content -LiteralPath (Join-Path $artifacts 'SHA256SUMS.txt') -Encoding UTF8
-Write-Output "995개 검사 통과. 배포 파일: $artifacts"
+Write-Output "1066개 검사 통과. 배포 파일: $artifacts"
 Write-Output "검사 원본: $validation"
