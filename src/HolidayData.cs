@@ -81,7 +81,10 @@ static class Holidays {
  internal static void AtomicWrite(string path,string text){Directory.CreateDirectory(Path.GetDirectoryName(path));string temporary=path+"."+Guid.NewGuid().ToString("N")+".tmp";try{File.WriteAllText(temporary,text,new UTF8Encoding(false));if(File.Exists(path))File.Replace(temporary,path,null);else File.Move(temporary,path);}finally{if(File.Exists(temporary))File.Delete(temporary);}}
  internal static List<HolidayChange> Accept(string text){
   var candidate=Parse(text);Ensure();
-  if(SourceTime(candidate)<SourceTime(current))throw new InvalidDataException("현재보다 오래된 공휴일 자료입니다.");
+  if(SourceTime(candidate)<SourceTime(current)){
+   if(candidate.contentVersion!=current.contentVersion)throw new InvalidDataException("현재보다 오래된 공휴일 자료입니다.");
+   candidate=current;text=Engine.Json(current);
+  }
   if(current.years.Any(y=>!candidate.years.Any(c=>c.year==y.year)))throw new InvalidDataException("기존 연도의 공휴일 자료가 누락됐습니다.");
   var changes=Differences(current,candidate);
   AtomicWrite(CacheFile,text);Activate(candidate);Origin="마지막 저장 자료";LoadWarning="";
@@ -92,7 +95,8 @@ static class Holidays {
  internal static string Fetch(){return FetchFrom(DownloadUrl);}
  internal static string FetchFrom(string source){
   Uri uri;if(!Uri.TryCreate(source,UriKind.Absolute,out uri)||uri.Scheme!="https"||uri.Host!="raw.githubusercontent.com"||!uri.AbsolutePath.StartsWith("/isilria/temporary-worker-pay-calculator/",StringComparison.Ordinal)||!String.IsNullOrEmpty(uri.Query)||!String.IsNullOrEmpty(uri.Fragment)||!String.IsNullOrEmpty(uri.UserInfo))throw new InvalidDataException("공휴일 자료 주소가 올바르지 않습니다.");
-  ServicePointManager.SecurityProtocol|=SecurityProtocolType.Tls12;var request=(HttpWebRequest)WebRequest.Create(uri);request.AllowAutoRedirect=false;request.Timeout=12000;request.ReadWriteTimeout=12000;request.UserAgent="ShortPay-Holiday/1.5";request.CachePolicy=new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
+  var fresh=new UriBuilder(uri);fresh.Query="shortpay_check="+DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture);
+  ServicePointManager.SecurityProtocol|=SecurityProtocolType.Tls12;var request=(HttpWebRequest)WebRequest.Create(fresh.Uri);request.AllowAutoRedirect=false;request.Timeout=12000;request.ReadWriteTimeout=12000;request.UserAgent="ShortPay-Holiday/1.5";request.CachePolicy=new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
   using(var response=(HttpWebResponse)request.GetResponse()){if(response.StatusCode!=HttpStatusCode.OK)throw new IOException("공휴일 자료를 받을 수 없습니다.");using(var reader=new StreamReader(response.GetResponseStream(),Encoding.UTF8)){var buffer=new char[524289];int count=0,n;while(count<buffer.Length&&(n=reader.Read(buffer,count,buffer.Length-count))>0)count+=n;if(count>524288)throw new InvalidDataException("공휴일 자료 크기가 제한을 초과했습니다.");string text=new string(buffer,0,count);Parse(text);return text;}}
  }
  internal static string Status(){return String.Join("·",Current.years.OrderBy(y=>y.year).Select(y=>y.year.ToString()))+"년 · "+Origin+" · 원천 확인 "+SourceTime(Current).ToLocalTime().ToString("MM/dd HH:mm")+(String.IsNullOrEmpty(LastCheck)?"":" · PC 확인 "+DateTime.Parse(LastCheck,CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind).ToLocalTime().ToString("MM/dd HH:mm"));}

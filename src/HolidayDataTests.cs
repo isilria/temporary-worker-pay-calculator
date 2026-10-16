@@ -42,6 +42,9 @@ static class HolidayDataTests {
   Holidays.ResetForTest(Path.Combine(folder,"cache"));Check(Holidays.Origin=="마지막 저장 자료"&&Holidays.Name(new DateTime(2026,11,3))!="","offline restart restores latest data");
   Check(Holidays.LastChanges.Count==1,"change history survives restart");
   Check(Holidays.Accept(added).Count==0,"same content does not notify again");
+  var newerSame=Copy(Holidays.Current);Holidays.Accept(Encode(newerSame,1));string newerTime=Holidays.Current.fetchedAtUtc;
+  Check(Holidays.Accept(added).Count==0,"older timestamp with identical content remains a successful check");
+  Check(Holidays.Current.fetchedAtUtc==newerTime,"identical older response cannot downgrade source check time");
   var renamed=Copy(updated);renamed.years.Single(y=>y.year==2026).holidays.Single(d=>d.date=="2026-11-03").name="검증용 명칭 변경";string renamedText=Encode(renamed,2);differences=Holidays.Accept(renamedText);Check(differences.Count==1&&differences[0].Before!=null&&differences[0].After!=null&&differences[0].ToString().Contains("이름 변경"),"name-only change identified");
   var removed=Copy(renamed);removed.years.Single(y=>y.year==2026).holidays.RemoveAll(d=>d.date=="2026-11-03");differences=Holidays.Accept(Encode(removed,3));Check(differences.Count==1&&differences[0].After==null,"removed holiday identified");
   var original=HolidayTests.Example();WorkPlan.FromLegacy(original);Holidays.Stamp(original);var days=Engine.Json(original.Days);string oldVersion=original.HolidayDataVersion;
