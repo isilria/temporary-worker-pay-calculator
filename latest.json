@@ -1,8 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "1.5.0.1",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.5.0",
-  "notes": "공식 공휴일 자료 갱신, 오프라인 저장·복구, 날짜·이름 변경 안내, 저장자료의 공휴일 기준 추적을 추가했습니다.",
-  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.5.0/ShortTermPayroll-1.5.exe",
-  "sha256": "4b64192005fd7f1d479bdeba9eb7bd346c91cb6e25741d62ec5ca393d350d463"
+  "version": "1.6.3.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.3",
+  "notes": "파스텔 민트 화면 개편, 직종 검색·한글 선택 오류 수정, 계약기간 주휴 산식 표시, 실제 양식 미리보기, 설정 화면 정리와 생년월일 전용 입력을 반영했습니다.",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.3/ShortTermPayroll-1.6.3.exe",
+  "sha256": "f3a720d4d4b74fa535e74545a04782d99bdd82364d9309034da7da8fc16dfaf7"
 }
