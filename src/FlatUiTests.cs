@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -15,6 +15,7 @@ public static class FlatPreview {
 public partial class MainForm {
  internal void CheckFlatLayout(string folder){int checks=0;Action<bool,string> check=(ok,label)=>{if(!ok)throw new Exception("FLAT UI: "+label);checks++;};
   LoadFlatExample();OffscreenTest=true;ShowInTaskbar=false;StartPosition=FormStartPosition.Manual;Location=new Point(SystemInformation.VirtualScreen.Right+200,SystemInformation.VirtualScreen.Top);Show();PerformLayout();Application.DoEvents();
+  for(int capture=0;capture<6;capture++){tabs.SelectedIndex=capture;PerformLayout();Application.DoEvents();using(var image=new Bitmap(Width,Height)){DrawToBitmap(image,new Rectangle(0,0,Width,Height));image.Save(Path.Combine(folder,"pastel-page-"+capture+".png"));}}
   foreach(var size in new[]{new Size(1280,800),new Size(1200,800),new Size(1600,950)}){
    ClientSize=size;PerformLayout();Application.DoEvents();tabs.SelectedIndex=1;DrawCalendar();Application.DoEvents();
    var days=calendar.Controls.OfType<DayButton>().ToList();check(days.Count==24,"single contract calendar keeps all 24 dates: "+size);check(days.All(b=>b.Width==b.Height),"every day hit target is square: "+size);check(days.All(b=>b.Width>=38),"date text has usable size: "+size);check(calendarLegend.Bottom<=calendarHost.Height&&holidayFormula.Bottom<=calendarHost.Height,"calendar and formula stay inside card: "+size);
@@ -25,6 +26,7 @@ public partial class MainForm {
   }
   tabs.SelectedIndex=1;check(result.HolidayHours==19.2m&&result.Net==1468600m,"approved example calculation survives new UI");
   r.Start=new DateTime(2026,8,1);r.End=new DateTime(2026,8,30);Engine.Fill(r,jobs[r.JobIndex]);LoadUI();RefreshAll();Application.DoEvents();check(calendar.RowCount==7&&calendar.Controls.OfType<DayButton>().All(b=>b.Width==b.Height),"six calendar rows still have square cells");check(calendarLegend.Bottom<=calendarHost.Height,"six-row legend stays within card");
+  CheckPastelBehavior(folder,check);
   dirty=false;Hide();File.WriteAllText(Path.Combine(folder,"flat-ui-tests.txt"),"PASS "+checks+" layout checks: square dates, three window sizes, all six pages, month boundary, six calendar rows and preserved example money.");
  }
 }

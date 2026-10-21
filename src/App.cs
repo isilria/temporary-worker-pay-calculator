@@ -13,38 +13,42 @@ static class Program {
  [STAThread] static void Main(string[] args){
   ExcelReports.RegisterDependencies();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
   try {if(args.Any(a=>a.EndsWith("-test")))Holidays.ResetForTest(Path.Combine(args.Last(),"holiday-cache"));if(args.Contains("--holiday-data-test")){HolidayDataTests.Run(args.Last());return;}if(args.Contains("--holiday-candidate-live-test")){HolidayDataTests.Live(args.Last(),true);return;}if(args.Contains("--holiday-live-test")){HolidayDataTests.Live(args.Last());return;}if(args.Contains("--basis-test")){WorkPlanTests.Run(args.Last());return;}if(args.Contains("--logic-test")){LogicAuditTests.Run(args.Last());return;}if(args.Contains("--holiday-test")){HolidayTests.Run(args.Last());return;}if(args.Contains("--update-live-test")){UpdateTests.Live(args.Last());return;}if(args.Contains("--update-test")){UpdateTests.Run(args.Last());return;}if(args.Contains("--xlsx-test")){ExcelTests.Run(args.Last());return;}if(args.Contains("--test")){Tests.Run(args.Last());return;}Application.Run(new MainForm());}
-  catch(Exception ex){File.WriteAllText(Path.Combine(Path.GetTempPath(),"ShortPay-error.txt"),ex.ToString());MessageBox.Show("실행 중 오류가 발생했습니다.\n"+ex.Message,"임금 도우미");}
+  catch(Exception ex){if(args.Any(a=>a.EndsWith("-test"))){Directory.CreateDirectory(args.Last());File.WriteAllText(Path.Combine(args.Last(),"test-error.txt"),ex.ToString());Environment.ExitCode=1;return;}File.WriteAllText(Path.Combine(Path.GetTempPath(),"ShortPay-error.txt"),ex.ToString());MessageBox.Show("실행 중 오류가 발생했습니다.\n"+ex.Message,"임금 도우미");}
  }
 }
 class Palette {
- public static readonly Color BlueTint=Color.FromArgb(230,236,250),Cream=Color.FromArgb(255,241,213),Mint=Color.FromArgb(224,240,230),Blush=Color.FromArgb(248,225,233),NetTint=Color.FromArgb(207,223,248);
- public static Color Accent=Color.FromArgb(37,99,235), Soft=Color.FromArgb(225,235,252), Edge=Color.FromArgb(205,214,230), Ink=Color.FromArgb(27,35,48), Muted=Color.FromArgb(100,111,128), Background=Color.FromArgb(240,243,250);
- public static void Select(int i){Color[] a={Color.FromArgb(37,99,235),Color.FromArgb(28,126,109),Color.FromArgb(125,83,164),Color.FromArgb(37,99,235),Color.FromArgb(163,99,57),Color.FromArgb(156,78,110)};Accent=a[Math.Max(0,Math.Min(5,i))];Soft=Color.FromArgb(225,235,252);}
+ public static readonly Color BlueTint=Color.FromArgb(241,235,255),Cream=Color.FromArgb(255,229,205),Mint=Color.FromArgb(221,247,240),Blush=Color.FromArgb(252,229,240),NetTint=Color.FromArgb(255,225,199);
+ public static Color Accent=Color.FromArgb(25,115,104), Soft=Color.FromArgb(245,242,252), Edge=Color.FromArgb(230,224,241), Ink=Color.FromArgb(28,39,77), Muted=Color.FromArgb(120,126,152), Background=Color.FromArgb(252,251,254);
+ public static void Select(int i){Color[] choices={Color.FromArgb(25,115,104),Color.FromArgb(26,127,109),Color.FromArgb(132,100,181),Color.FromArgb(53,112,174),Color.FromArgb(173,109,63),Color.FromArgb(160,85,119)};Accent=choices[Math.Max(0,Math.Min(5,i))];Soft=Color.FromArgb(245,242,252);}
  public static Color Surface(Control c){while(c!=null&&c.BackColor.A<255)c=c.Parent;return c==null?Background:c.BackColor;}
  public static GraphicsPath Round(RectangleF r,float radius){var p=new GraphicsPath();float d=radius*2;p.AddArc(r.X,r.Y,d,d,180,90);p.AddArc(r.Right-d,r.Y,d,d,270,90);p.AddArc(r.Right-d,r.Bottom-d,d,d,0,90);p.AddArc(r.X,r.Bottom-d,d,d,90,90);p.CloseFigure();return p;}
 }
 class Card:Panel {
  public bool Input;public Color InputColor=Color.Empty,LineColor=Color.Empty;
  public Card(){SetStyle(ControlStyles.ResizeRedraw,true);DoubleBuffered=true;BackColor=Color.White;Padding=new Padding(16);}
- protected override void OnPaintBackground(PaintEventArgs e){e.Graphics.Clear(Palette.Surface(Parent));using(var p=Palette.Round(new RectangleF(.5f,.5f,Width-2,Height-2),4)){e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;using(var b=new SolidBrush(Input?(InputColor.IsEmpty?Color.White:InputColor):BackColor))e.Graphics.FillPath(b,p);using(var pen=new Pen(Input&&ContainsFocus?Palette.Accent:LineColor.IsEmpty?Palette.Edge:LineColor,1))e.Graphics.DrawPath(pen,p);}}
+ protected override void OnPaintBackground(PaintEventArgs e){e.Graphics.Clear(Palette.Surface(Parent));using(var p=Palette.Round(new RectangleF(.5f,.5f,Width-2,Height-2),Input?9:16)){e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;using(var b=new SolidBrush(Input?(InputColor.IsEmpty?Color.White:InputColor):BackColor))e.Graphics.FillPath(b,p);using(var pen=new Pen(Input&&ContainsFocus?Palette.Accent:LineColor.IsEmpty?Palette.Edge:LineColor,1))e.Graphics.DrawPath(pen,p);}}
  protected override void OnEnter(EventArgs e){base.OnEnter(e);Invalidate();}protected override void OnLeave(EventArgs e){base.OnLeave(e);Invalidate();}
 }
 class SoftButton:Button {
- public bool Active;public Color ActionColor=Color.Empty;public int MenuIcon=-1;public bool ExcelIcon,PdfIcon;
- public SoftButton(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);UseVisualStyleBackColor=false;FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;BackColor=Color.White;ForeColor=Palette.Ink;Cursor=Cursors.Hand;Height=36;TabStop=true;}
+ public bool Active;public bool NavigationTile;public Color ActionColor=Color.Empty;public int MenuIcon=-1;public bool ExcelIcon,PdfIcon;
+ public SoftButton(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);UseVisualStyleBackColor=false;FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;BackColor=Color.White;ForeColor=Palette.Ink;Cursor=Cursors.Hand;Height=44;TabStop=true;}
  protected override void OnPaint(PaintEventArgs e){
   var g=e.Graphics;g.Clear(Palette.Surface(Parent));g.SmoothingMode=SmoothingMode.AntiAlias;
-  bool menu=MenuIcon>=0;Color fill=!Enabled?Color.FromArgb(246,247,250):menu?(Active?Palette.Soft:Palette.Surface(Parent)):Active?Palette.Accent:Color.White;
-  Color ink=!Enabled?Color.FromArgb(170,178,190):menu?(Active?Palette.Accent:Palette.Ink):Active?Color.White:Palette.Ink;
-  using(var p=Palette.Round(new RectangleF(1,1,Width-3,Height-3),4)){
+  if(NavigationTile){PaintNavigation(g);return;}
+  bool menu=MenuIcon>=0;Color fill=!Enabled?Color.FromArgb(246,247,250):menu?(Active?Palette.Soft:Palette.Surface(Parent)):Active?Color.FromArgb(180,231,217):Color.White;
+  if(Enabled&&(ExcelIcon||PdfIcon))fill=ExcelIcon?Color.FromArgb(235,248,240):Color.FromArgb(255,239,240);
+  Color ink=!Enabled?Color.FromArgb(170,178,190):menu?(Active?Palette.Accent:Palette.Ink):Active?Color.FromArgb(23,92,83):Palette.Ink;
+  if(Enabled&&(ExcelIcon||PdfIcon))ink=ExcelIcon?Color.FromArgb(33,115,70):Color.FromArgb(190,55,63);
+  using(var p=Palette.Round(new RectangleF(1,1,Width-3,Height-3),10)){
    using(var b=new SolidBrush(fill))g.FillPath(b,p);
-   if(!menu||Focused)using(var pen=new Pen(Focused?Palette.Accent:Palette.Edge))g.DrawPath(pen,p);
+   if(!menu||Focused)using(var pen=new Pen(Focused?Palette.Accent:ExcelIcon?Color.FromArgb(134,203,163):PdfIcon?Color.FromArgb(232,159,165):Palette.Edge))g.DrawPath(pen,p);
   }
   if(menu){if(Active)using(var b=new SolidBrush(Palette.Accent))g.FillRectangle(b,0,4,3,Height-8);MenuGlyph.Draw(g,MenuIcon,new Rectangle(12,(Height-20)/2,20,20),ink);}
-  if(PdfIcon||ExcelIcon)using(var pen=new Pen(ink,1.4f)){g.DrawRectangle(pen,15,(Height-20)/2,16,20);g.DrawLine(pen,19,Height/2,27,Height/2);g.DrawLine(pen,19,Height/2+4,27,Height/2+4);}
+  if(PdfIcon||ExcelIcon){var rect=new Rectangle(12,(Height-24)/2,23,25);using(var pen=new Pen(ink,1.5f)){g.DrawLines(pen,new[]{new Point(rect.Left+4,rect.Top),new Point(rect.Right-6,rect.Top),new Point(rect.Right,rect.Top+6),new Point(rect.Right,rect.Bottom),new Point(rect.Left+4,rect.Bottom),new Point(rect.Left+4,rect.Top)});g.DrawLines(pen,new[]{new Point(rect.Right-6,rect.Top),new Point(rect.Right-6,rect.Top+6),new Point(rect.Right,rect.Top+6)});}using(var badgeBrush=new SolidBrush(ink))g.FillRectangle(badgeBrush,rect.Left,rect.Top+9,25,12);using(var small=new Font("Arial",ExcelIcon?8:6.5f,FontStyle.Bold))TextRenderer.DrawText(g,ExcelIcon?"X":"PDF",small,new Rectangle(rect.Left,rect.Top+9,25,12),Color.White,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.NoPadding);}
   var bounds=(PdfIcon||ExcelIcon)?new Rectangle(37,0,Width-42,Height):menu?new Rectangle(40,0,Width-45,Height):ClientRectangle;
   TextRenderer.DrawText(g,Text,Font,bounds,ink,(menu?TextFormatFlags.Left:TextFormatFlags.HorizontalCenter)|TextFormatFlags.VerticalCenter|TextFormatFlags.WordBreak);
  }
+ void PaintNavigation(Graphics g){Color[] shades={Palette.BlueTint,Palette.Mint,Palette.Cream,Palette.Blush};Color fill=shades[Math.Max(0,Math.Min(3,MenuIcon))];if(!Active)fill=Color.FromArgb((fill.R+255)/2,(fill.G+255)/2,(fill.B+255)/2);using(var path=Palette.Round(new RectangleF(1,1,Width-3,Height-3),14))using(var brush=new SolidBrush(fill))using(var pen=new Pen(Active?Color.FromArgb(138,200,185):fill,Active?2:1)){g.FillPath(brush,path);g.DrawPath(pen,path);}MenuGlyph.Draw(g,MenuIcon,new Rectangle(20,(Height-36)/2,36,36),MenuIcon==1?Palette.Accent:Color.FromArgb(142,119,220));using(var small=new Font("맑은 고딕",11))TextRenderer.DrawText(g,(MenuIcon+1).ToString("00"),small,new Rectangle(70,9,Width-83,22),Palette.Muted,TextFormatFlags.Left|TextFormatFlags.VerticalCenter);using(var font=new Font("맑은 고딕",15,FontStyle.Bold))TextRenderer.DrawText(g,Text,font,new Rectangle(69,31,Width-82,Height-35),Palette.Ink,TextFormatFlags.Left|TextFormatFlags.VerticalCenter);if(Focused&&ShowFocusCues)ControlPaint.DrawFocusRectangle(g,new Rectangle(5,5,Width-11,Height-11));}
 }
 class PastelCombo:ComboBox {
  public PastelCombo(){DrawMode=DrawMode.OwnerDrawFixed;ItemHeight=24;}
@@ -53,18 +57,18 @@ class PastelCombo:ComboBox {
 public partial class MainForm:Form {
  Record r=new Record(); List<Job> jobs; Result result; bool loading=true,dirty=false;string currentFile,lastContractWarning="";Label holidayFormula;
  internal Action<string> ContractAlert=message=>MessageBox.Show(message,"계약기간 확인",MessageBoxButtons.OK,MessageBoxIcon.Warning);
- Panel main,sidebar; FlowLayoutPanel content; Label summary,notice; TabControl tabs; TableLayoutPanel calendar; ComboBox year,month,removeMode,theme,job,identityMode,relation; DateInput start,end; PlainNumber hours; TextBox person,identity,bank,account,holder,reason,institution,contact,note,original;
+ Panel main,sidebar; FlowLayoutPanel content; Label summary,notice; TabControl tabs; TableLayoutPanel calendar; ComboBox year,month,removeMode,theme,identityMode,relation; JobSearchBox job; DateInput start,end; PlainNumber hours; TextBox person,identity,bank,account,holder,reason,institution,contact,note,original;
  DataGridView weeks; Dictionary<string,PlainNumber> numbers=new Dictionary<string,PlainNumber>(); CheckBox manual,employment,rateConfirm; WageComparison reference; Panel calendarHost;
  public MainForm(){
   DoubleBuffered=true;
   using(var sr=new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("jobs.json")))jobs=Engine.Parse<List<Job>>(sr.ReadToEnd());
   Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-  Text="1개월 미만 대체근로자 임금계산기 · "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3);Font=new Font("맑은 고딕",10);StartPosition=FormStartPosition.CenterScreen;ClientSize=new Size(1280,800);MinimumSize=new Size(1200,800);AutoScaleMode=AutoScaleMode.Dpi;BackColor=Palette.Background;
-  r.Start=DateTime.Today;r.End=r.Start.AddDays(6);Build();LoadUI();loading=false;RefreshAll();dirty=false;
+  Text="1개월 미만 대체근로자 임금계산기 · "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3);Font=new Font("맑은 고딕",11);StartPosition=FormStartPosition.CenterScreen;ClientSize=new Size(1440,940);MinimumSize=new Size(1200,800);AutoScaleMode=AutoScaleMode.Dpi;BackColor=Palette.Background;
+  r.Start=DateTime.Today;r.End=r.Start.AddDays(6);Build();BuildPastelLayout();LoadUI();loading=false;RefreshAll();dirty=false;
   Shown+=(a,e)=>{BeginInvoke((Action)(()=>{PerformLayout();SyncNavigation();Invalidate(true);Update();job.Refresh();}));if(!Environment.GetCommandLineArgs().Any(arg=>arg.EndsWith("-test"))&&automaticUpdates.Checked)CheckStartupUpdates();};
   FormClosing+=CloseSession;
  }
- Label L(string text,int size=10,bool bold=false){return new Label{Text=text,AutoSize=false,Height=27,ForeColor=Palette.Ink,BackColor=Color.Transparent,Font=new Font("맑은 고딕",size,bold?FontStyle.Bold:FontStyle.Regular),TextAlign=ContentAlignment.MiddleLeft};}
+ Label L(string text,int size=10,bool bold=false){return new Label{Text=text,AutoSize=false,Height=27,ForeColor=Palette.Ink,BackColor=Color.Transparent,Font=new Font("맑은 고딕",size==9?11:size==10?12:size,bold?FontStyle.Bold:FontStyle.Regular),TextAlign=ContentAlignment.MiddleLeft};}
  SoftButton B(string text,Action action,int width=135){var b=new SoftButton{Text=text,Width=width,Margin=new Padding(3)};b.Click+=(s,e)=>action();return b;}
  ComboBox Combo(string[] values,int width=170){var c=new PastelCombo{DropDownStyle=ComboBoxStyle.DropDownList,Width=width,FlatStyle=FlatStyle.Flat,BackColor=Palette.Soft};c.Items.AddRange(values);c.SelectedIndex=0;return c;}
  FlowLayoutPanel Row(params Control[] controls){var f=new FlowLayoutPanel{AutoSize=false,WrapContents=true,Dock=DockStyle.Top,Padding=new Padding(0,5,0,5),BackColor=Color.Transparent};f.Controls.AddRange(controls);return f;}
@@ -73,14 +77,13 @@ public partial class MainForm:Form {
  TextBox TextInput(){var t=new TextBox();t.TextChanged+=(s,e)=>Changed();return t;}
  PlainNumber Num(string key,decimal max=100000000, int places=0){var n=new PlainNumber{Minimum=0,Maximum=max,DecimalPlaces=places,ThousandsSeparator=true,BorderStyle=BorderStyle.None,BackColor=Palette.Soft};n.ValueChanged+=(s,e)=>Changed();numbers[key]=n;return n;}
  void Build(){
-  sidebar=new Panel{Dock=DockStyle.Left,Width=204,BackColor=Color.FromArgb(245,247,250),Padding=new Padding(18)};Controls.Add(sidebar);
-  var brand=L("대체근로자\n임금계산기",17,true);brand.SetBounds(20,22,180,70);brand.ForeColor=Palette.Ink;sidebar.Controls.Add(brand);
-  var sub=L("1개월 미만 · 2026 기준",9);sub.SetBounds(20,100,180,26);sub.ForeColor=Palette.Muted;sidebar.Controls.Add(sub);
-  string[] nav={"대상자 · 계약","근무일 · 주휴","임금 · 공제","명세서 · 신청서","직종 · 계산 기준","설정"};for(int i=0;i<nav.Length;i++){int idx=i;var b=B(nav[i],()=>tabs.SelectedIndex=idx,170);b.MenuIcon=i;b.SetBounds(16,162+i*52,172,43);sidebar.Controls.Add(b); navButtons.Add(b);}
-  theme=Combo(new[]{"기본 파랑","민트","라일락","파랑","살구","장미"},165);theme.SelectedIndexChanged+=(s,e)=>{if(loading)return;r.Theme=theme.SelectedIndex;ApplyTheme();dirty=true;};
-  var tag=L("ver. "+Assembly.GetExecutingAssembly().GetName().Version.ToString(3)+"\ne-mail: isilria@ice.go.kr",9);tag.SetBounds(18,485,184,58);sidebar.Controls.Add(tag);
-  main=new Panel{Dock=DockStyle.Fill,Padding=new Padding(20,12,20,12),BackColor=Palette.Background};Controls.Add(main);main.BringToFront();
-  var top=new Panel{Dock=DockStyle.Top,Height=96};var title=L("1개월 미만 대체근로자 임금계산기",18,true);title.SetBounds(0,0,590,38);title.ForeColor=Palette.Ink;top.Controls.Add(title);BuildContextStrip(top);
+  sidebar=new Panel{Visible=false};
+  string[] nav={"대상자 · 계약","근무일 · 주휴","임금 · 공제","명세서 · 신청서","직종 · 계산 기준","설정"};
+  theme=Combo(new[]{"기본 민트","진한 민트","라일락","파랑","살구","장미"},165);theme.SelectedIndexChanged+=(s,e)=>{if(loading)return;r.Theme=0;ApplyTheme();dirty=true;};
+  main=new Panel{Dock=DockStyle.Fill,Padding=new Padding(24,20,24,10),BackColor=Palette.Background};Controls.Add(main);
+  var top=new Panel{Dock=DockStyle.Top,Height=198};var title=L("대체근로자 임금 계산기",26,true);title.SetBounds(0,0,580,46);top.Controls.Add(title);
+  var navRow=new TableLayoutPanel{ColumnCount=4,RowCount=1,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right,Margin=Padding.Empty};navRow.SetBounds(0,64,top.Width,80);top.Resize+=(s,e)=>navRow.Width=top.ClientSize.Width;for(int i=0;i<4;i++){navRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,25));int index=i;var button=B(nav[i],()=>tabs.SelectedIndex=index);button.MenuIcon=i;button.NavigationTile=true;button.Dock=DockStyle.Fill;button.Margin=new Padding(i==0?0:5,0,i==3?0:5,0);navRow.Controls.Add(button,i,0);navButtons.Add(button);}top.Controls.Add(navRow);
+  BuildContextStrip(top);
   notice=L("본 프로그램은 개인 제작 프로그램입니다. 사용 전 현행 지침과 규정을 확인하시기 바랍니다",8);notice.Dock=DockStyle.Bottom;notice.Height=24;notice.Padding=new Padding(18,0,0,0);notice.ForeColor=Palette.Muted;notice.BackColor=Palette.Background;Controls.Add(notice);notice.SendToBack();
   tabs=new PageTabs{Dock=DockStyle.Fill};foreach(string n in nav)tabs.TabPages.Add(n);
   tabs.Deselecting+=(s,e)=>{if(!loading&&e.TabPageIndex==0&&!CheckContractDeparture())e.Cancel=true;};
@@ -89,14 +92,14 @@ public partial class MainForm:Form {
   BuildPerson();BuildCalendar();BuildMoney();BuildOutput();BuildReference();BuildSettings();tabs.SelectedIndex=0;navButtons[0].Active=true;
  }
  FlowLayoutPanel Page(int index){var f=new FlowLayoutPanel{Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=false,Padding=new Padding(0)};tabs.TabPages[index].Controls.Add(f);f.Resize+=(s,e)=>{foreach(Control c in f.Controls)c.Width=f.ClientSize.Width-4;};return f;}
- void Fields(Card card,int y,params Control[] fields){var row=Row(fields);row.Padding=Padding.Empty;foreach(Control f in fields)f.Margin=new Padding(4,f is Button?25:0,4,0);row.Dock=DockStyle.None;row.SetBounds(14,y,card.Width-28,72);row.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;card.Controls.Add(row);}
+ void Fields(Card card,int y,params Control[] fields){var row=Row(fields);row.Padding=Padding.Empty;foreach(Control f in fields)f.Margin=new Padding(4,f is Button?25:0,4,0);row.Dock=DockStyle.None;row.SetBounds(14,y,card.Width-28,72);row.Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right;card.Controls.Add(row);var weights=fields.Select(x=>x.Width).ToArray();row.Resize+=(a,b)=>{if(row.ClientSize.Width<100)return;int usable=row.ClientSize.Width-fields.Sum(x=>x.Margin.Horizontal);for(int i=0;i<fields.Length;i++){fields[i].Width=Math.Max(70,usable*weights[i]/weights.Sum());var label=fields[i].Controls.OfType<Label>().FirstOrDefault();if(label!=null)label.Width=fields[i].Width-4;var input=fields[i].Controls.OfType<Card>().FirstOrDefault();if(input!=null)input.Width=fields[i].Width;}};}
 
  void BuildPerson(){
   content=Page(0);var c=Section(content,"대상자 정보",282);
-  person=TextInput();identity=TextInput();bank=TextInput();account=TextInput();holder=TextInput();reason=TextInput();original=TextInput();
-  identityMode=Combo(new[]{"생년월일","주민등록번호"});relation=Combo(new[]{"계약 유지","별도"});
-  job=Combo(jobs.Select(x=>x.name).ToArray());job.SelectedIndexChanged+=(s,e)=>{if(loading)return;loading=true;var j=jobs[job.SelectedIndex];r.Meal=j.meal;r.Allowance=j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value);Set("base",j.@base);Set("meal",j.meal);Set("allowance",j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value));hours.Maximum=Engine.IsGuard(j)?24:8;Set("hours",Engine.IsGuard(j)?8.5m:8);Set("weekend",12);Set("nightDays",0);Set("publicDays",0);UpdateContractFields();r.JobIndex=job.SelectedIndex;PreserveAttendanceAfterDates();loading=false;Changed();};
-  Fields(c,42,Field("직종",job,315),Field("대상자 성명",person,215),Field("생년월일 / 주민번호",identity,310));
+  person=TextInput();identity=new BirthdayInput{BorderStyle=BorderStyle.None,BackColor=Palette.Soft,ImeMode=ImeMode.Disable};identity.TextChanged+=(s,e)=>Changed();bank=TextInput();account=TextInput();holder=TextInput();reason=TextInput();original=TextInput();
+  identityMode=Combo(new[]{"생년월일"});relation=Combo(new[]{"계약 유지","별도"});
+  job=new JobSearchBox(jobs.Select(x=>x.name).ToArray()){SelectedIndex=0};job.SelectedIndexChanged+=(s,e)=>{if(loading)return;loading=true;var j=jobs[job.SelectedIndex];r.Meal=j.meal;r.Allowance=j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value);Set("base",j.@base);Set("meal",j.meal);Set("allowance",j.allowances.Where(x=>x.Key!="기관근무수당").Sum(x=>x.Value));hours.Maximum=Engine.IsGuard(j)?24:8;Set("hours",Engine.IsGuard(j)?8.5m:8);Set("weekend",12);Set("nightDays",0);Set("publicDays",0);UpdateContractFields();r.JobIndex=job.SelectedIndex;PreserveAttendanceAfterDates();loading=false;Changed();};
+  Fields(c,42,Field("직종",job,315),Field("대상자 성명",person,215),Field("생년월일",identity,310));
   Fields(c,116,Field("은행명",bank,215),Field("계좌번호",account,415),Field("예금주",holder,210));
   Fields(c,190,Field("원근로자 성명",original,260),Field("사유",reason,588));
   BuildContractFields(content);
@@ -172,36 +175,36 @@ public partial class MainForm:Form {
   var t1=L("2026 직종참조표 · 2025 보수교육 자료 · 1개월 미만 대체근로자 인건비 산출 자료 기준\n당직전담실무원은 평일·주말 근로시간과 야간·공휴일 지급일을 구분하여 산정합니다.",9);t1.Width=930;t1.Height=58;p.Controls.Add(t1);
  }
  readonly List<ThemeTile> themeChoices=new List<ThemeTile>();
- void BuildThemeChoices(Control page){var card=Section(page,"색상 테마 선택",84);var row=new TableLayoutPanel{ColumnCount=6,RowCount=1,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};row.SetBounds(17,33,925,46);for(int i=0;i<6;i++)row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/6));card.Controls.Add(row);Color[] colors={Color.FromArgb(37,99,235),Color.FromArgb(33,128,110),Color.FromArgb(147,84,172),Color.FromArgb(44,117,181),Color.FromArgb(178,105,66),Color.FromArgb(159,86,114)};for(int i=0;i<6;i++){int index=i;var button=new ThemeTile{Text=theme.Items[i].ToString(),ThemeIndex=i,Swatch=colors[i],Dock=DockStyle.Fill,Margin=new Padding(4),Active=i==r.Theme};button.Click+=(a,e)=>theme.SelectedIndex=index;row.Controls.Add(button,i,0);themeChoices.Add(button);}}
+ void BuildThemeChoices(Control page){var card=Section(page,"색상 테마 선택",84);var row=new TableLayoutPanel{ColumnCount=6,RowCount=1,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};row.SetBounds(17,33,925,46);for(int i=0;i<6;i++)row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/6));card.Controls.Add(row);Color[] colors={Color.FromArgb(25,115,104),Color.FromArgb(33,128,110),Color.FromArgb(147,84,172),Color.FromArgb(44,117,181),Color.FromArgb(178,105,66),Color.FromArgb(159,86,114)};for(int i=0;i<6;i++){int index=i;var button=new ThemeTile{Text=theme.Items[i].ToString(),ThemeIndex=i,Swatch=colors[i],Dock=DockStyle.Fill,Margin=new Padding(4),Active=i==r.Theme};button.Click+=(a,e)=>theme.SelectedIndex=index;row.Controls.Add(button,i,0);themeChoices.Add(button);}}
  void BuildSettings(){var p=Page(5);var c=Section(p,"기관 · 신청서 정보",190);recipient=TextInput();manager=TextInput();Fields(c,40,Field("학교 / 기관명",institution,300),Field("수신자 기호",recipient,300));Fields(c,112,Field("담당자명 (신청서)",manager,300),Field("담당자 / 연락처",contact,300));
   foreach(var row in c.Controls.OfType<FlowLayoutPanel>()){row.Width=622;row.Anchor=AnchorStyles.Top|AnchorStyles.Left;}
   var reset=B("설정값 초기화",ResetSettings,190);reset.SetBounds(710,72,190,38);reset.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(reset);
   var hint=L("기관 정보만 자동 저장됩니다.\n계산 입력은 종료 시 초기화됩니다.",9);hint.SetBounds(700,116,235,48);hint.Anchor=AnchorStyles.Top|AnchorStyles.Right;c.Controls.Add(hint);
   BuildStorageSettings(p);
-  BuildThemeChoices(p);
+
   BuildUpdateSettings(p);
   LoadSettings();foreach(var input in new[]{institution,contact,recipient,manager})input.TextChanged+=(s,e)=>ScheduleSettingsSave();theme.SelectedIndexChanged+=(s,e)=>ScheduleSettingsSave();automaticUpdates.CheckedChanged+=(s,e)=>ScheduleSettingsSave();ApplySectionColors();}
 
 
- void LoadUI(){loading=true;person.Text=r.Name;identity.Text=r.Identity;identityMode.SelectedIndex=r.IdentityMode=="주민등록번호"?1:0;identity.UseSystemPasswordChar=false;bank.Text=r.Bank;account.Text=r.Account;holder.Text=r.Holder;reason.Text=r.Reason;original.Text=r.OriginalWorker;institution.Text=r.Institution;contact.Text=r.Contact;recipient.Text=r.Recipient;manager.Text=r.Manager;requestRound.SelectedIndex=Math.Max(0,Math.Min(3,r.RequestRound-1));payment.Value=r.PaymentDate??DateTime.Today;paymentKnown.Checked=r.PaymentDate.HasValue;payment.Enabled=paymentKnown.Checked;job.SelectedIndex=r.JobIndex;start.Value=r.Start;end.Value=r.End;relation.SelectedIndex=r.Separate?1:0;note.Text=r.ReviewNote;manual.Checked=r.Override;employment.Checked=r.Employment;rateConfirm.Checked=r.RateConfirmed;theme.SelectedIndex=r.Theme;
+ void LoadUI(){loading=true;person.Text=r.Name;r.Identity=BirthdayInput.Sanitize(r.Identity);r.IdentityMode="생년월일";identity.Text=r.Identity;identityMode.SelectedIndex=0;identity.UseSystemPasswordChar=false;bank.Text=r.Bank;account.Text=r.Account;holder.Text=r.Holder;reason.Text=r.Reason;original.Text=r.OriginalWorker;institution.Text=r.Institution;contact.Text=r.Contact;recipient.Text=r.Recipient;manager.Text=r.Manager;requestRound.SelectedIndex=Math.Max(0,Math.Min(3,r.RequestRound-1));payment.Value=r.PaymentDate??DateTime.Today;paymentKnown.Checked=r.PaymentDate.HasValue;payment.Enabled=paymentKnown.Checked;job.SelectedIndex=r.JobIndex;start.Value=r.Start;end.Value=r.End;relation.SelectedIndex=r.Separate?1:0;note.Text=r.ReviewNote;manual.Checked=r.Override;employment.Checked=r.Employment;rateConfirm.Checked=r.RateConfirmed;theme.SelectedIndex=r.Theme;
   LoadGuardFields();Set("hours",r.Hours);Set("holiday",r.HolidayHours);Set("base",r.MonthlyBase);Set("meal",r.Meal);Set("allowance",r.Allowance);Set("minimum",r.Minimum);Set("hourly",r.HourlyOverride);Set("within",r.Within);Set("overtime",r.Overtime);Set("extra",r.ExtraPay);Set("food",r.Food);Set("tax",r.Tax);Set("local",r.LocalTax);Set("health",r.Health);Set("care",r.Care);Set("pension",r.Pension);Set("other",r.Other);Set("rate",r.Rate);year.SelectedItem=r.Start.Year.ToString();month.SelectedIndex=r.Start.Month-1;loading=false;ApplyTheme();
  }
  void Set(string key,decimal value){var n=numbers[key];n.Value=Math.Max(n.Minimum,Math.Min(n.Maximum,value));}
  decimal N(string key){return numbers[key].Value;}
- void ReadUI(){r.Name=person.Text;r.Identity=identity.Text;r.IdentityMode=new string(identity.Text.Where(Char.IsDigit).ToArray()).Length>8?"주민등록번호":"생년월일";r.Bank=bank.Text;r.Account=account.Text;r.Holder=holder.Text;r.Reason=reason.Text;r.OriginalWorker=original.Text;r.Institution=institution.Text;r.Contact=contact.Text;r.Recipient=recipient.Text;r.Manager=manager.Text;r.RequestRound=requestRound.SelectedIndex+1;r.PaymentDate=paymentKnown.Checked?(DateTime?)payment.Value.Date:null;r.ExtraIsAdjustment=false;r.OutputYear=0;r.OutputMonth=0;r.JobIndex=job.SelectedIndex;r.Start=start.Value.Date;r.End=end.Value.Date;r.Hours=hours.Value;r.Separate=false;r.Override=false;r.ReviewNote=note.Text;r.HolidayHours=N("holiday");r.MonthlyBase=N("base");if(numbers["meal"].Enabled)r.Meal=N("meal");if(numbers["allowance"].Enabled)r.Allowance=N("allowance");r.Minimum=N("minimum");r.HourlyOverride=N("hourly");r.Within=N("within");r.Overtime=N("overtime");r.ExtraPay=N("extra");r.Food=N("food");r.Tax=N("tax");r.LocalTax=N("local");r.Health=N("health");r.Care=N("care");r.Pension=N("pension");r.Other=0;r.Rate=N("rate");ReadGuardFields();r.RateConfirmed=rateConfirm.Checked;}
+ void ReadUI(){r.Name=person.Text;r.Identity=BirthdayInput.Sanitize(identity.Text);r.IdentityMode="생년월일";r.Bank=bank.Text;r.Account=account.Text;r.Holder=holder.Text;r.Reason=reason.Text;r.OriginalWorker=original.Text;r.Institution=institution.Text;r.Contact=contact.Text;r.Recipient=recipient.Text;r.Manager=manager.Text;r.RequestRound=requestRound.SelectedIndex+1;r.PaymentDate=paymentKnown.Checked?(DateTime?)payment.Value.Date:null;r.ExtraIsAdjustment=false;r.OutputYear=0;r.OutputMonth=0;r.JobIndex=job.SelectedIndex;r.Start=start.Value.Date;r.End=end.Value.Date;r.Hours=hours.Value;r.Separate=false;r.Override=false;r.ReviewNote=note.Text;r.HolidayHours=N("holiday");r.MonthlyBase=N("base");if(numbers["meal"].Enabled)r.Meal=N("meal");if(numbers["allowance"].Enabled)r.Allowance=N("allowance");r.Minimum=N("minimum");r.HourlyOverride=N("hourly");r.Within=N("within");r.Overtime=N("overtime");r.ExtraPay=N("extra");r.Food=N("food");r.Tax=N("tax");r.LocalTax=N("local");r.Health=N("health");r.Care=N("care");r.Pension=N("pension");r.Other=0;r.Rate=N("rate");ReadGuardFields();r.RateConfirmed=rateConfirm.Checked;}
  void Changed(){if(loading)return;if(r.Hours!=hours.Value||r.JobIndex!=job.SelectedIndex||r.Separate!=(relation.SelectedIndex==1))ResetReview();dirty=true;ReadUI();RefreshAll();}
  void RefreshAll(){UpdateHolidayStatus();result=Engine.Calculate(r,jobs[r.JobIndex]);summary.Text="임금총액: "+result.Gross.ToString("N0")+"원     공제액: "+result.Deductions.ToString("N0")+"원     실지급액: "+result.Net.ToString("N0")+"원";
   ((PayrollSummary)summary).UpdateResult(r,result);UpdateAllowanceInputs();
   if(Engine.ContractWarning(r)!="")summary.Text="계약기간 확인 필요 · 단기 인건비 계산 중지";
 
-  weeks.Rows.Clear();int wi=0;foreach(var w in result.Weeks){wi++;weeks.Rows.Add(wi+"주차\n"+w.Period,r.Days.Count(d=>d.Value==1&&String.CompareOrdinal(d.Key,Engine.Key(w.Start))>=0&&String.CompareOrdinal(d.Key,Engine.Key(w.End))<=0)+"일",w.Holiday.ToString("0.####")+"시간",w.Holiday>0?(result.Ready?"지급":"예상"):w.Status);}weeks.Height=40+Math.Max(1,weeks.Rows.Count)*40+3;weeks.ClearSelection();
+  weeks.Rows.Clear();int wi=0;foreach(var w in result.Weeks){wi++;weeks.Rows.Add(wi+"주차\n"+w.Period,r.Days.Count(d=>d.Value==1&&String.CompareOrdinal(d.Key,Engine.Key(w.Start))>=0&&String.CompareOrdinal(d.Key,Engine.Key(w.End))<=0)+"일",w.Holiday.ToString("0.####")+"시간",w.Holiday>0?(result.Ready?"지급":"예상"):w.Status);}weeks.Height=203;weeks.ClearSelection();
   holidayFormula.Top=weeks.Bottom+15;
-  holidayFormula.Text="주휴 계산 근거"+"\n"+String.Join("\n",result.Weeks.Select((w,i)=>new {w,i}).Where(x=>x.w.Holiday>0).Select(x=>(x.i+1)+"주차  "+x.w.BasisDescription))+"\n주휴 합계 "+result.HolidayHours.ToString("0.####")+"시간\n"+WorkPlan.Summary(r);
+  holidayFormula.Text=ContractHolidayCaption(r,result,Engine.IsGuard(jobs[r.JobIndex]));
 
   notice.Text=result.Warnings.Count>0?"확인 필요: "+result.Warnings[0]:String.IsNullOrEmpty(lastImportNote)?"기관 설정은 자동 저장됩니다. 계산 입력은 종료 시 초기화됩니다. 이어서 작업하려면 자료 또는 임금산정표를 저장하세요.":lastImportNote;
   reference.Text="최저임금: "+r.Minimum.ToString("N2")+"원  |  통상시급: "+result.OrdinaryHourly.ToString("N2")+"원\n\n적용기준: "+(r.HourlyOverride>0?"직접 지정 ("+result.Hourly.ToString("N2")+"원)":result.OrdinaryHourly>=r.Minimum?"통상시급":"최저임금");
-  if(Engine.IsGuard(jobs[r.JobIndex]))holidayFormula.Text="당직전담실무원 · 주휴수당 미산정\n월 임금산정시간 "+result.MonthlyHours+"시간\n평일 "+r.Hours+"시간 / 주말 "+r.WeekendHours+"시간\n야간가산: 지급일 × 1.5시간 × 통상시급 × 50%";
-  employmentLine.Text=r.Employment?"고용보험 자동 공제  "+result.Employment.ToString("N0")+"원 ("+r.Rate+"%)":"고용보험 적용 제외 · 0원";UpdateContextStrip();if(calendarTotals!=null)calendarTotals.UpdateResult(result);RefreshPlanControls();DrawCalendar();
+
+  employmentLine.Text=r.Employment?"고용보험 자동 공제  "+result.Employment.ToString("N0")+"원 ("+r.Rate+"%)":"고용보험 적용 제외 · 0원";UpdateContextStrip();if(calendarTotals!=null)calendarTotals.UpdateResult(result);RefreshPlanControls();DrawCalendar();UpdatePastelValues();
  }
 
  Label contractCaption;
@@ -224,8 +227,8 @@ public partial class MainForm:Form {
  static Color InputBackground(Control c){for(Control p=c.Parent;p!=null;p=p.Parent){var card=p as Card;if(card!=null&&card.Input&&card.InputColor!=Color.Empty)return card.InputColor;}return Color.White;}
  void ToneInputs(Card section){section.BackColor=Color.White;ToneChildren(section,Color.White,Palette.Edge);}
  void ToneChildren(Control parent,Color fill,Color line){foreach(Control c in parent.Controls){var card=c as Card;if(card!=null&&card.Input){card.InputColor=fill;card.LineColor=line;}if(c is TextBox||c is PlainNumber)c.BackColor=fill;ToneChildren(c,fill,line);}}
- void ApplyTheme(){foreach(var choice in themeChoices){choice.Active=choice.ThemeIndex==r.Theme;choice.Invalidate();}Palette.Select(r.Theme);Walk(this);RefreshAll();Invalidate(true);}
- void Walk(Control p){foreach(Control c in p.Controls){if(c is Label&&c.Font.Size>=15)c.ForeColor=Palette.Ink;if(c is TextBox||c is PlainNumber||c is ComboBox)c.BackColor=InputBackground(c);if(c is SoftButton)c.Invalidate();if(c is DataGridView)((DataGridView)c).ColumnHeadersDefaultCellStyle.BackColor=c==weeks?Color.FromArgb(244,229,199):Palette.BlueTint;Walk(c);}summary.ForeColor=Palette.Ink;}
+ void ApplyTheme(){r.Theme=0;if(theme.SelectedIndex!=0){bool previous=loading;loading=true;theme.SelectedIndex=0;loading=previous;}Palette.Select(0);Walk(this);RefreshAll();Invalidate(true);}
+ void Walk(Control p){foreach(Control c in p.Controls){if(c is Label&&c.Font.Size>=15)c.ForeColor=Palette.Ink;if(c is TextBox||c is PlainNumber||c is ComboBox)c.BackColor=InputBackground(c);if(c is SoftButton)c.Invalidate();if(c is DataGridView)((DataGridView)c).ColumnHeadersDefaultCellStyle.BackColor=c==weeks?Palette.Soft:Palette.BlueTint;Walk(c);}summary.ForeColor=Palette.Ink;}
  bool CanLeave(){if(!dirty)return true;var answer=MessageBox.Show("수정한 대상자 자료를 저장할까요?","저장 확인",MessageBoxButtons.YesNoCancel);if(answer==DialogResult.Cancel)return false;if(answer==DialogResult.No)return true;return SaveCore();}
  void NewRecord(){if(!CanLeave())return;r=new Record{Start=DateTime.Today,End=DateTime.Today.AddDays(6),Theme=r.Theme,Institution=r.Institution,Contact=r.Contact,Recipient=r.Recipient,Manager=r.Manager};Engine.Fill(r,jobs[r.JobIndex]);currentFile=null;lastContractWarning="";lastImportNote="";LoadUI();RefreshAll();dirty=false;tabs.SelectedIndex=0;}
  void Save(){SaveCore();}
@@ -252,3 +255,4 @@ public partial class MainForm:Form {
 
 }
 }
+

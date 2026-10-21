@@ -4,15 +4,15 @@ using System.Linq;
 using System.Windows.Forms;
 namespace ShortPay {
 static class CalendarColors {
- public static Color Fill(int mode){return mode==1?Color.FromArgb(219,234,254):mode==2?Color.FromArgb(216,221,229):Palette.Accent;}
- public static Color Ink(int mode){return mode==1?Color.FromArgb(41,71,102):mode==2?Color.FromArgb(46,59,75):Color.White;}
+ public static Color Fill(int mode){return mode==1?Color.FromArgb(219,234,254):mode==2?Color.FromArgb(216,221,229):Palette.Accent.G>Palette.Accent.R&&Palette.Accent.G>Palette.Accent.B?Color.FromArgb(181,232,218):Color.FromArgb((Palette.Accent.R+510)/3,(Palette.Accent.G+510)/3,(Palette.Accent.B+510)/3);}
+ public static Color Ink(int mode){return mode==1?Color.FromArgb(41,71,102):mode==2?Color.FromArgb(46,59,75):Palette.Accent;}
  public static Color Edge(int mode){return mode==1?Color.FromArgb(147,180,220):mode==2?Color.FromArgb(105,117,134):Palette.Accent;}
  public static Color Inactive(int mode){var a=Palette.Accent;return mode==1?Color.FromArgb(246,249,253):mode==2?Color.FromArgb(232,235,240):Color.FromArgb((a.R+2295)/10,(a.G+2295)/10,(a.B+2295)/10);}
 }
 class CalendarModeTab:Button {
  public int Mode;public bool Selected;
  public CalendarModeTab(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;UseVisualStyleBackColor=false;Cursor=Cursors.Hand;AccessibleRole=AccessibleRole.PageTab;}
- protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));Color fill=Selected?(Mode==2?CalendarColors.Edge(2):CalendarColors.Fill(Mode)):CalendarColors.Inactive(Mode);Color ink=Selected?(Mode==2?Color.White:CalendarColors.Ink(Mode)):Mode==0?Palette.Accent:Palette.Muted;using(var brush=new SolidBrush(fill))g.FillRectangle(brush,0,0,Width,Height-2);using(var font=new Font("맑은 고딕",9,Selected?FontStyle.Bold:FontStyle.Regular))TextRenderer.DrawText(g,Text,font,new Rectangle(4,0,Width-8,Height-3),Enabled?ink:Palette.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);if(Focused)ControlPaint.DrawFocusRectangle(g,new Rectangle(3,3,Width-7,Height-8),ink,fill);}
+ protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.Clear(Palette.Surface(Parent));Color fill=Selected?(Mode==2?CalendarColors.Edge(2):CalendarColors.Fill(Mode)):CalendarColors.Inactive(Mode);Color ink=Selected?(Mode==2?Color.White:CalendarColors.Ink(Mode)):Mode==0?Palette.Accent:Palette.Muted;using(var brush=new SolidBrush(fill))g.FillRectangle(brush,0,0,Width,Height-2);using(var font=new Font("맑은 고딕",10,Selected?FontStyle.Bold:FontStyle.Regular))TextRenderer.DrawText(g,Text,font,new Rectangle(4,0,Width-8,Height-3),Enabled?ink:Palette.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);if(Focused)ControlPaint.DrawFocusRectangle(g,new Rectangle(3,3,Width-7,Height-8),ink,fill);}
 }
 class CalendarModeTabs:Control {
  readonly CalendarModeTab[] buttons;int selected=1;
@@ -21,7 +21,7 @@ class CalendarModeTabs:Control {
  public CalendarModeTab[] Tabs{get{return buttons;}}
  public CalendarModeTabs(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);AccessibleRole=AccessibleRole.PageTabList;buttons=new[]{new CalendarModeTab{Mode=1,Text="계약근무일"},new CalendarModeTab{Mode=0,Text="근무상황부"},new CalendarModeTab{Mode=2,Text="통상근로자 근무일"}};foreach(var tab in buttons){var target=tab;tab.Click+=(s,e)=>SelectedIndex=target.Mode;tab.KeyDown+=(s,e)=>{int index=Array.IndexOf(buttons,target),next=e.KeyCode==Keys.Right?(index+1)%3:e.KeyCode==Keys.Left?(index+2)%3:-1;if(next>=0){buttons[next].Focus();SelectedIndex=buttons[next].Mode;e.SuppressKeyPress=true;}};Controls.Add(tab);}RefreshSelection();}
  void RefreshSelection(){if(buttons==null)return;foreach(var tab in buttons){tab.Selected=tab.Mode==selected;tab.AccessibleDescription=tab.Selected?"선택됨":"선택 안 됨";tab.Invalidate();}Invalidate();}
- protected override void OnLayout(LayoutEventArgs e){base.OnLayout(e);if(buttons==null)return;int first=Math.Min(112,(Width-154)/2);first=Math.Max(90,first);buttons[0].SetBounds(0,0,first,Height-2);buttons[1].SetBounds(first+2,0,first,Height-2);buttons[2].SetBounds(first*2+4,0,Width-first*2-4,Height-2);}
+ protected override void OnLayout(LayoutEventArgs e){base.OnLayout(e);if(buttons==null)return;int first=(Width-4)*28/100;buttons[0].SetBounds(0,0,first,Height-2);buttons[1].SetBounds(first+2,0,first,Height-2);buttons[2].SetBounds(first*2+4,0,Width-first*2-4,Height-2);}
  protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(Palette.Surface(Parent));using(var pen=new Pen(CalendarColors.Edge(selected),2))e.Graphics.DrawLine(pen,0,Height-1,Width,Height-1);}
 }
 class PlanDialog:Form {

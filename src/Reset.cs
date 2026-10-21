@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -8,9 +8,11 @@ public partial class MainForm {
  SoftButton resetAllButton;
  internal Func<bool> ConfirmReset = () => MessageBox.Show("현재 입력한 대상자·계약·근무 달력·임금·공제를 초기화할까요?\n저장하지 않은 입력은 사라집니다.\n\n저장된 파일과 출력 문서는 삭제하지 않으며, 기관 정보·기관기호·테마·저장 폴더 설정은 유지합니다.","계산 입력 초기화",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)==DialogResult.Yes;
  void BuildResetButton(Panel top){
-  resetAllButton=B("초기화",ResetAll,90);resetAllButton.Name="resetAllButton";resetAllButton.AccessibleName="계산 입력 초기화";resetAllButton.Active=false;resetAllButton.CausesValidation=false;
-  var save=B("저장",Save,80);save.AccessibleName="대상자 자료 저장";var open=B("자료 열기",Open,95);open.AccessibleName="대상자 자료 열기";open.CausesValidation=false;
-  Action layout=()=>{resetAllButton.SetBounds(top.ClientSize.Width-90,0,90,36);save.SetBounds(resetAllButton.Left-88,0,80,36);open.SetBounds(save.Left-103,0,95,36);};layout();top.Controls.Add(open);top.Controls.Add(save);top.Controls.Add(resetAllButton);top.Resize+=(s,e)=>layout();
+  resetAllButton=B("초기화",ResetAll,82);resetAllButton.Name="resetAllButton";resetAllButton.AccessibleName="계산 입력 초기화";resetAllButton.CausesValidation=false;
+  var save=B("자료 저장",Save,104);save.Active=true;save.AccessibleName="대상자 자료 저장";var open=B("자료 불러오기",Open,124);open.AccessibleName="대상자 자료 열기";open.CausesValidation=false;
+  var basis=B("직종·기준",()=>tabs.SelectedIndex=4,96);var setting=B("설정",()=>tabs.SelectedIndex=5,72);
+  var buttons=new[]{open,save,resetAllButton,basis,setting};foreach(var button in buttons)top.Controls.Add(button);
+  Action layout=()=>{int x=top.ClientSize.Width;for(int i=buttons.Length-1;i>=0;i--){x-=buttons[i].Width;buttons[i].SetBounds(x,3,buttons[i].Width,38);x-=7;}};layout();top.Resize+=(s,e)=>layout();
  }
  void ResetAll(){
   if(!ConfirmReset())return;
@@ -37,7 +39,7 @@ public partial class MainForm {
   check(start.Value.Date==DateTime.Today&&end.Value.Date==DateTime.Today.AddDays(6)&&job.SelectedIndex==2&&hours.Value==8,"contract defaults restored");
   check(institution.Text==""&&contact.Text==""&&recipient.Text==""&&manager.Text=="","institution cleared");
   var settings=Engine.Parse<Settings>(File.ReadAllText(SettingsFile));check(settings.Institution==""&&settings.Contact==""&&settings.Manager==""&&settings.Recipient=="","cleared settings persisted");
-  check(theme.SelectedIndex==3&&outputFolders[0].Text==savedFolder&&automaticUpdates.Checked==auto,"preferences preserved");
+  check(theme.SelectedIndex==0&&outputFolders[0].Text==savedFolder&&automaticUpdates.Checked==auto,"preferences preserved");
   check(currentFile==null&&!dirty&&File.ReadAllText(existing)=="saved-file-must-stay","saved file preserved and detached");
   using(var reopened=new MainForm()){check(reopened.institution.Text==""&&reopened.manager.Text=="","no stale institution after restart");}
   check(resetAllButton.Size==new Size(150,38)&&resetAllButton.Active&&!resetAllButton.CausesValidation,"calendar button style and size");

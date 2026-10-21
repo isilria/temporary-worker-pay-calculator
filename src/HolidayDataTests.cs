@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -19,8 +19,8 @@ static class HolidayDataTests {
   Check(Holidays.Name(new DateTime(2027,2,9))=="대체공휴일(설날)","official names and next year");
   Check(Holidays.Name(new DateTime(2027,1,2))=="","ordinary date");
   Check(Holidays.Origin=="내장 자료","first offline launch uses embedded data");
-  Check(Holidays.Covers(2025)&&Holidays.Covers(2027)&&!Holidays.Covers(2028),"coverage explicit");
-  Check(!Engine.Calculate(new Record{Start=new DateTime(2028,11,1),End=new DateTime(2028,11,7),RateConfirmed=true},new Job{name="일반직종"}).Ready,"missing year cannot finalize");
+  int unsupported=initial.years.Max(y=>y.year)+1;Check(Holidays.Covers(2025)&&Holidays.Covers(2027)&&!Holidays.Covers(unsupported),"coverage explicit");
+  Check(!Engine.Calculate(new Record{Start=new DateTime(unsupported,11,1),End=new DateTime(unsupported,11,7),RateConfirmed=true},new Job{name="일반직종"}).Ready,"missing year cannot finalize");
   Reject(()=>Holidays.Parse(""),"empty data rejected");Reject(()=>Holidays.Parse("{}"),"wrong schema rejected");
   Reject(()=>Holidays.Parse(baseline.Replace("삼일절","임의변경")),"modified content hash rejected");
   Reject(()=>Holidays.Parse(baseline.Replace(Holidays.SourceUrl,"https://example.com")),"wrong source rejected");

@@ -29,8 +29,8 @@ class DayButton:Button {
   Color ink=!Enabled?Color.FromArgb(180,187,199):State==1?CalendarColors.Ink(CalendarMode):State==2?Color.FromArgb(129,83,11):State==4?Color.FromArgb(23,103,64):PublicHoliday||Pink&&!WeeklyHoliday?Color.FromArgb(190,57,67):Palette.Ink;
   using(var path=Palette.Round(box,3))using(var brush=new SolidBrush(fill))using(var pen=new Pen(Focused?CalendarColors.Edge(CalendarMode):State==1?CalendarColors.Edge(CalendarMode):Palette.Edge)){g.FillPath(brush,path);g.DrawPath(pen,path);}
   bool marker=WeeklyHoliday||State==4||UnknownAttendance;var number=new Rectangle((int)box.X,(int)box.Y,(int)box.Width,marker?(int)box.Height-18:(int)box.Height);
-  using(var font=new Font("맑은 고딕",Math.Min(12,Font.Size),FontStyle.Bold))TextRenderer.DrawText(g,Text,font,number,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
-  if(marker){var tag=new Rectangle((int)box.X+3,(int)box.Bottom-18,(int)box.Width-6,15);using(var font=new Font("맑은 고딕",7,FontStyle.Bold))TextRenderer.DrawText(g,WeeklyHoliday?"주휴일":UnknownAttendance?"미확인":"유급",font,tag,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
+  using(var font=new Font("맑은 고딕",Math.Min(14,Font.Size),FontStyle.Bold))TextRenderer.DrawText(g,Text,font,number,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
+  if(marker){var tag=new Rectangle((int)box.X+3,(int)box.Bottom-18,(int)box.Width-6,15);using(var font=new Font("맑은 고딕",9,FontStyle.Bold))TextRenderer.DrawText(g,WeeklyHoliday?"주휴일":UnknownAttendance?"미확인":"유급",font,tag,ink,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
  }
 }
 class DateInput:UserControl {
@@ -57,7 +57,7 @@ public partial class MainForm {
  internal static string SettingsTestFile;
  Timer settingsTimer;bool settingsPending;
  string SettingsFile{get{return SettingsTestFile??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"ShortPay_Test3","settings.json");}}
- void LoadSettings(){try{if(File.Exists(SettingsFile)){var settings=Engine.Parse<Settings>(File.ReadAllText(SettingsFile));r.Institution=settings.Institution;r.Contact=settings.Contact;r.Recipient=settings.Recipient;r.Manager=settings.Manager;r.Theme=Math.Max(0,Math.Min(5,settings.Theme));automaticUpdates.Checked=settings.AutomaticUpdates;LoadStorageSettings(settings);}}catch{}}
+ void LoadSettings(){try{if(File.Exists(SettingsFile)){var settings=Engine.Parse<Settings>(File.ReadAllText(SettingsFile));r.Institution=settings.Institution;r.Contact=settings.Contact;r.Recipient=settings.Recipient;r.Manager=settings.Manager;r.Theme=0;automaticUpdates.Checked=settings.AutomaticUpdates;LoadStorageSettings(settings);}}catch{}}
  void ScheduleSettingsSave(){if(loading)return;settingsPending=true;if(settingsTimer==null){settingsTimer=new Timer{Interval=350};settingsTimer.Tick+=(s,e)=>FlushSettings();}settingsTimer.Stop();settingsTimer.Start();}
  void FlushSettings(){if(settingsTimer!=null)settingsTimer.Stop();if(!settingsPending)return;string temp=SettingsFile+"."+Guid.NewGuid().ToString("N")+".tmp";try{Directory.CreateDirectory(Path.GetDirectoryName(SettingsFile));File.WriteAllText(temp,Engine.Json(new Settings{Institution=institution.Text,Contact=contact.Text,Recipient=recipient.Text,Manager=manager.Text,Theme=r.Theme,AutomaticUpdates=automaticUpdates.Checked,WageFolder=outputFolders[0].Text,PayslipFolder=outputFolders[1].Text,RequestFolder=outputFolders[2].Text,OpenGenerated=openGenerated.Checked}),System.Text.Encoding.UTF8);if(File.Exists(SettingsFile))File.Replace(temp,SettingsFile,null);else File.Move(temp,SettingsFile);settingsPending=false;}catch(Exception e){if(!closingSession)MessageBox.Show("설정을 자동 저장하지 못했습니다. "+e.Message);}finally{if(File.Exists(temp))File.Delete(temp);}}
  void ResetSettings(){loading=true;institution.Text=contact.Text=recipient.Text=manager.Text="";loading=false;Changed();ScheduleSettingsSave();FlushSettings();}
@@ -108,5 +108,45 @@ namespace ShortPay {
 class WageComparison:System.Windows.Forms.Label {
  public WageComparison(){SetStyle(System.Windows.Forms.ControlStyles.OptimizedDoubleBuffer|System.Windows.Forms.ControlStyles.AllPaintingInWmPaint|System.Windows.Forms.ControlStyles.UserPaint,true);BackColor=System.Drawing.Color.Transparent;}
  protected override void OnPaint(System.Windows.Forms.PaintEventArgs e){var lines=Text.Split(new[]{'\n'},System.StringSplitOptions.RemoveEmptyEntries);var flags=System.Windows.Forms.TextFormatFlags.Left|System.Windows.Forms.TextFormatFlags.NoPadding; if(lines.Length>0)System.Windows.Forms.TextRenderer.DrawText(e.Graphics,lines[0],Font,new System.Drawing.Rectangle(0,8,Width,27),Palette.Ink,flags);if(lines.Length>1){const string prefix="적용기준: ";string value=lines[1].StartsWith(prefix)?lines[1].Substring(prefix.Length):lines[1];int w=System.Windows.Forms.TextRenderer.MeasureText(e.Graphics,prefix,Font,new System.Drawing.Size(Width,27),flags).Width;System.Windows.Forms.TextRenderer.DrawText(e.Graphics,prefix,Font,new System.Drawing.Rectangle(0,46,w,27),Palette.Ink,flags);System.Windows.Forms.TextRenderer.DrawText(e.Graphics,value,Font,new System.Drawing.Rectangle(w,46,Width-w,27),System.Drawing.Color.FromArgb(36,100,211),flags);}}
+}
+}
+
+namespace ShortPay {
+// Search text is independent of the committed job index, so edits cannot change pay until confirmed.
+class JobSearchBox:UserControl {
+ readonly string[] names;readonly JobSearchEditor editor;readonly SoftButton arrow;readonly ListBox list;readonly Label empty;readonly JobPopup popup;int selected=-1;bool syncing;
+ public event EventHandler SelectedIndexChanged;
+ public int SelectedIndex {get{return selected;}set{if(value<0||value>=names.Length)return;bool changed=selected!=value;selected=value;popup.Hide();list.Items.Clear();RestoreText();if(changed&&SelectedIndexChanged!=null)SelectedIndexChanged(this,EventArgs.Empty);}}
+ internal TextBox Editor {get{return editor;}}
+ internal int CandidateCount {get{return list.Items.Count;}}
+ internal string CandidateText {get{return list.SelectedItem==null?"":list.SelectedItem.ToString();}}
+ public JobSearchBox(string[] values){names=values;Height=32;Width=280;BackColor=Color.White;editor=new JobSearchEditor{BorderStyle=BorderStyle.None,Dock=DockStyle.Fill,Margin=Padding.Empty,AccessibleName="직종명 입력 및 검색"};arrow=new SoftButton{Text="⌄",Dock=DockStyle.Right,Width=29,TabStop=false};Controls.Add(editor);Controls.Add(arrow);Padding=new Padding(4,5,0,0);popup=new JobPopup{BackColor=Color.White,ShowInTaskbar=false,FormBorderStyle=FormBorderStyle.None};list=new ListBox{Dock=DockStyle.Fill,BorderStyle=BorderStyle.FixedSingle,IntegralHeight=false,ItemHeight=27,Font=new Font("맑은 고딕",11)};empty=new Label{Text="일치하는 직종이 없습니다.\n기존 직종명을 다시 입력하세요.",Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleCenter,ForeColor=Palette.Muted,Font=new Font("맑은 고딕",10)};popup.Controls.Add(list);popup.Controls.Add(empty);editor.TextChanged+=(s,e)=>{if(!syncing&&!editor.CommitFence)Search(editor.Text);};editor.KeyDown+=(s,e)=>{if(editor.Composing)return;if(e.KeyCode==Keys.Down||e.KeyCode==Keys.Up){MoveCandidate(e.KeyCode==Keys.Down?1:-1);e.SuppressKeyPress=true;}else if(e.KeyCode==Keys.Enter){ConfirmCandidate();e.SuppressKeyPress=true;}else if(e.KeyCode==Keys.Escape){CancelSearch();e.SuppressKeyPress=true;}};editor.Leave+=(s,e)=>{if(IsHandleCreated)BeginInvoke((Action)(()=>{if(!ContainsFocus&&!popup.ContainsFocus)CancelSearch();}));};list.MouseDown+=(s,e)=>{int index=list.IndexFromPoint(e.Location);if(index>=0){list.SelectedIndex=index;ConfirmCandidate();}};arrow.Click+=(s,e)=>{if(popup.Visible)CancelSearch();else{Search("");editor.Focus();}};FontChanged+=(s,e)=>editor.Font=Font;EnabledChanged+=(s,e)=>{if(!Enabled)CancelSearch();};}
+ internal void Search(string text){list.BeginUpdate();list.Items.Clear();foreach(string name in names)if(name.IndexOf(text.Trim(),StringComparison.CurrentCultureIgnoreCase)>=0)list.Items.Add(name);list.EndUpdate();if(list.Items.Count>0)list.SelectedIndex=0;if(!Visible||FindForm()==null)return;list.Visible=list.Items.Count>0;empty.Visible=!list.Visible;popup.Size=new Size(Math.Max(Width,280),list.Items.Count==0?62:Math.Min(216,list.Items.Count*27+4));var screen=Screen.FromControl(this).WorkingArea;var point=PointToScreen(new Point(0,Height));if(point.Y+popup.Height>screen.Bottom)point.Y=PointToScreen(Point.Empty).Y-popup.Height;point.X=Math.Max(screen.Left,Math.Min(point.X,screen.Right-popup.Width));popup.Location=point;if(!popup.Visible)popup.Show(FindForm());}
+ internal void MoveCandidate(int direction){if(!popup.Visible)Search(editor.Text==CurrentName?"":editor.Text);if(list.Items.Count>0)list.SelectedIndex=Math.Max(0,Math.Min(list.Items.Count-1,list.SelectedIndex+direction));}
+ internal void ConfirmCandidate(){if(list.SelectedItem==null){CancelSearch();return;}int next=Array.IndexOf(names,list.SelectedItem.ToString());popup.Hide();SelectedIndex=next;editor.SelectionStart=editor.TextLength;editor.Focus();}
+ internal void CancelSearch(){popup.Hide();list.Items.Clear();RestoreText();}
+ string CurrentName {get{return selected>=0?names[selected]:"";}}
+ void RestoreText(){syncing=true;editor.FinishSelection(CurrentName);syncing=false;}
+ protected override void Dispose(bool disposing){if(disposing)popup.Dispose();base.Dispose(disposing);}
+ class JobPopup:Form {protected override bool ShowWithoutActivation{get{return true;}}protected override CreateParams CreateParams{get{var p=base.CreateParams;p.ExStyle|=0x08000000;return p;}}}
+}
+}
+
+namespace ShortPay {
+// End native IME composition before replacing the editor with a selected job name.
+class JobSearchEditor:TextBox {
+ internal bool Composing,CommitFence;int revision;
+ [System.Runtime.InteropServices.DllImport("imm32.dll")]static extern IntPtr ImmGetContext(IntPtr window);
+ [System.Runtime.InteropServices.DllImport("imm32.dll")]static extern bool ImmNotifyIME(IntPtr context,int action,int index,int value);
+ [System.Runtime.InteropServices.DllImport("imm32.dll")]static extern bool ImmReleaseContext(IntPtr window,IntPtr context);
+ internal void FinishSelection(string value){int token=++revision;CommitFence=true;if(IsHandleCreated){IntPtr context=ImmGetContext(Handle);if(context!=IntPtr.Zero){try{ImmNotifyIME(context,0x15,4,0);}finally{ImmReleaseContext(Handle,context);}}}Composing=false;Text=value;SelectionStart=TextLength;if(!IsHandleCreated){CommitFence=false;return;}BeginInvoke((Action)(()=>{if(IsDisposed||token!=revision)return;Text=value;SelectionStart=TextLength;CommitFence=false;}));}
+ protected override void WndProc(ref Message message){if(CommitFence&&(message.Msg==0x10f||message.Msg==0x286||message.Msg==0x102))return;if(message.Msg==0x10d)Composing=true;if(message.Msg==0x10e)Composing=false;base.WndProc(ref message);}
+}
+}
+
+namespace ShortPay {
+class BirthdayInput:TextBox {
+ internal static string Sanitize(string value){string digits=new string((value??"").Where(Char.IsDigit).ToArray());return digits.Length>8?digits.Substring(0,6):value??"";}
+ protected override void OnTextChanged(EventArgs e){string birthday=Sanitize(Text);if(birthday!=Text){Text=birthday;SelectionStart=TextLength;return;}base.OnTextChanged(e);}
 }
 }

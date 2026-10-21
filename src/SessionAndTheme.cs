@@ -39,7 +39,7 @@ public partial class MainForm {
     cards[n].BackColor=color;
    }
   }
-  sidebar.BackColor=Color.FromArgb(231,236,248);calendar.BackColor=Palette.BlueTint;
+  sidebar.BackColor=Palette.Background;calendar.BackColor=Palette.BlueTint;
   weeklyTint=new Card{BackColor=Palette.Cream,Padding=Padding.Empty};calendarHost.Controls.Add(weeklyTint);weeklyTint.Controls.Add(weeklyHeading);weeklyTint.Controls.Add(weeks);weeklyTint.Controls.Add(holidayFormula);
   weeklyHeading.BackColor=holidayFormula.BackColor=Palette.Cream;
   weeks.BackgroundColor=Palette.Cream;weeks.DefaultCellStyle.BackColor=Palette.Cream;weeks.AlternatingRowsDefaultCellStyle.BackColor=Color.FromArgb(255,248,232);weeks.ColumnHeadersDefaultCellStyle.BackColor=Color.FromArgb(244,229,199);

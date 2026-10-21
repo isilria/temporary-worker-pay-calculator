@@ -93,8 +93,8 @@ public partial class MainForm {
   decimal initialPay=result.Net;
   for(int themeIndex=0;themeIndex<6;themeIndex++){
    theme.SelectedIndex=themeIndex;calendarEditMode.Tabs.Single(t=>t.Mode==0).PerformClick();Application.DoEvents();
-   check(paintedFill(calendar.Controls.OfType<DayButton>().First(b=>b.State==1)).ToArgb()==Palette.Accent.ToArgb(),"attendance date follows selected theme "+themeIndex);
-   check(paintedFill(calendarEditMode.Tabs.Single(t=>t.Mode==0)).ToArgb()==Palette.Accent.ToArgb(),"attendance tab follows selected theme "+themeIndex);
+   check(paintedFill(calendar.Controls.OfType<DayButton>().First(b=>b.State==1)).ToArgb()==CalendarColors.Fill(0).ToArgb(),"attendance date follows selected theme "+themeIndex);
+   check(paintedFill(calendarEditMode.Tabs.Single(t=>t.Mode==0)).ToArgb()==CalendarColors.Fill(0).ToArgb(),"attendance tab follows selected theme "+themeIndex);
    calendarEditMode.Tabs.Single(t=>t.Mode==1).PerformClick();Application.DoEvents();
    check(paintedFill(calendar.Controls.OfType<DayButton>().First(b=>b.State==1)).ToArgb()==Color.FromArgb(219,234,254).ToArgb(),"contract pastel blue remains stable across themes "+themeIndex);
    calendarEditMode.Tabs.Single(t=>t.Mode==2).PerformClick();Application.DoEvents();

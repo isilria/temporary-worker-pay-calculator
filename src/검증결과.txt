@@ -1,28 +1,22 @@
-﻿대체근로자 임금계산기 정식 1.5.0 / 2026-10-16
-파일 버전 1.5.0.1 / Windows .NET Framework / AnyCPU
-배포 소스로 1070개 검사 통과: 교육자료·금액·설정창122, 계산·저장·금액·출력40, 근무편성·수당·저장145, 엑셀·신청서164, 화면60, 복원437, 종료25, 업데이트22, 공휴일갱신55. 교육자료122·계산40·편성145·엑셀164·업데이트22은 실제 배포EXE로 실행했습니다.
-달력 왼쪽 세 탭을 계약근무일(연한 하늘) / 근무상황부(설정 테마) / 통상근로자 근무일(회색)로 배치했습니다. 날짜 칸·범례도 같은 역할 색상이며6개 테마에서 실제 렌더링을 검사했습니다.
-가상 자료와 격리된 설정을 사용했습니다. 화면은 작업 영역 밖에서 활성화하지 않고 검사했습니다.
-신청서 문구는 직종명 → 원근로자 → 원근로자명 순서이며 같은 연도의 종료일은 월·일만 표시합니다.
-새 산정표의 입력 보존, 일반·당직 복원, 변경 재저장, 원본 보존, 손상·수식·계산 결과 변조 거부를 확인했습니다.
-교육자료 예시: 약정40시간÷같은 기간 통상8일=5시간. 첫 주 실제 지급도5시간입니다. 기존 날짜별 예시:96시간÷15일=6.4시간씩3회, 합계19.2시간, 유급 공휴일3회도 각6.4시간, 실지급액1,468,600원. 고정 주24시간 약정의 비례계산은 별개입니다.
-계약·주휴 설정창의 근거 메모·하단 확인 체크와 확인 서명에 따른 출력 제한을 제거했습니다. 실제 입력 오류 차단은 유지합니다.
-PDF 생성·외관 및 실제 프린터 인쇄는 이번 배포에서 재검증하지 않았습니다.
-교육자료 반영 Engine.cs SHA256 3ad69a139000b213bb2e8e47a4d561b83ca483c56b05aa3752e79f35087ef113
+﻿대체근로자 임금 계산기 1.6.3 · 2026-10-21
+총 1,194개 검사 통과
 
-실제 검사 기록:
 PASS 122 whole-contract education example, eligibility/attendance, monetary, fixed/irregular, migration, native/XLSX and simplified-dialog checks.
+
 PASS 40 engine, saved-input, monetary and export checks. Separate schedule and guard-workbook checks saved in schedule-tests.txt. PDF and interactive UI checks are outside this logic audit.
+
 PASS 145 schedule, allowance, output and persistence checks
+
 PASS 164 export and reopen checks
-PASS 60 layout checks: square dates, three window sizes, all six pages, month boundary, six calendar rows and preserved example money.
+
+PASS 184 layout checks: square dates, three window sizes, all six pages, month boundary, six calendar rows and preserved example money.
+
 PASS 437 workbook restore, field fidelity, legacy, changed-input, corrupt-file and formula-preservation checks. Session/UI checks are in session-tests.txt.
+
 PASS 25 empty-start, import/edit, failed-import isolation, colored-section, silent-exit and restart checks. App rendering used an offscreen window without activation or a taskbar item; no desktop screenshot was taken.
+
 PASS 22 update checks
+
 PASS 55 holiday data checks: official initial data, validation, atomic persistence, offline fallback, diff notifications, saved files, calculation impact, UI and network failure.
 
-EXE SHA256 4b64192005fd7f1d479bdeba9eb7bd346c91cb6e25741d62ec5ca393d350d463
-
-공식 수집기 추가 검증: PASS 12 collector checks. 프로그램1070+수집기12, 총1082개 검사 통과.
-GitHub 실제 공식 API 수집 성공: https://github.com/isilria/temporary-worker-pay-calculator/actions/runs/38835457614
-배포 실행파일의 정식 공휴일 수신·해시검증·원자적 저장·오프라인 복원·설정 수동 확인 성공.
+계산 엔진과 주휴 로직, 엑셀 및 PDF 출력 코드와 세 엑셀 서식은 기준 소스와 동일합니다. 설정 영역의 겹침, 고정 민트와 생년월일 전용 입력·이전 자료 변환을 포함하여 화면·입력 184개를 검사했습니다.

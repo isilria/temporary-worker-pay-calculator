@@ -4,3 +4,8 @@ validation*/
 *.part
 __pycache__/
 *.pyc
+
+# Local UI validation and temporary diagnostics
+qa-*/
+verification-console.txt
+src/BasisProbe.cs

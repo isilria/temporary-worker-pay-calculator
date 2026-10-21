@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -49,7 +49,7 @@ public static class HolidayTests {
 public partial class MainForm {
  internal void ExerciseHolidayFixUI(string folder){
  r=HolidayTests.Example();LoadUI();automaticUpdates.Checked=false;RefreshAll();tabs.SelectedIndex=1;Show();Application.DoEvents();
- if(result.HolidayHours!=19.2m||!holidayFormula.Text.Contains("6.4 + 6.4 + 6.4 = 19.2"))throw new Exception("holiday screen calculation");
+ if(result.HolidayHours!=19.2m||!holidayFormula.Text.Contains("96시간 ÷ 통상근무 15일 = 6.4시간"))throw new Exception("holiday screen calculation");
  CaptureScreen(Path.Combine(folder,"holiday-screen.png"));Show();
  Func<DayButton> button=()=>calendar.Controls.OfType<DayButton>().Single(b=>b.AccessibleName.StartsWith("2026-09-24"));
  if(button().State!=4)throw new Exception("paid holiday green state");
