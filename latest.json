@@ -1,8 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "1.6.3.0",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.3",
-  "notes": "파스텔 민트 화면 개편, 직종 검색·한글 선택 오류 수정, 계약기간 주휴 산식 표시, 실제 양식 미리보기, 설정 화면 정리와 생년월일 전용 입력을 반영했습니다.",
-  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.3/ShortTermPayroll-1.6.3.exe",
-  "sha256": "f3a720d4d4b74fa535e74545a04782d99bdd82364d9309034da7da8fc16dfaf7"
+  "version": "1.6.12.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.12",
+  "notes": "화면 디자인 개편\n달력 탭 전환 깜빡임 개선\n문서·신청 차수 선택 오류 및 테두리 수정\n저장 위치·명세서 화면 정리\n직종수당·초과근로 및 명세서 기준시간 개선",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.12/ShortTermPayroll-1.6.12.exe",
+  "sha256": "4f126ee6b641574debb3daeba737890a51793c43f683886a0486340f413c1017"
 }
