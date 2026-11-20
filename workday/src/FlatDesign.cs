@@ -41,8 +41,9 @@ internal sealed partial class MainForm {
   top.Controls.Add(logo);top.Controls.Add(title);top.Controls.Add(segment);
   BuildHolidayPanel(top);
   BuildAppUpdateButton(top);
+  foreach(Control control in new Control[]{holidaySourceLabel,holidayDataStatus,holidayCheckButton,holidayHistoryButton,appUpdateButton})control.Anchor=AnchorStyles.Top|AnchorStyles.Left;
   holidaySourceLabel.AutoEllipsis=true;holidayDataStatus.AutoEllipsis=true;
-  Action layoutTop=()=>{float scale=top.Height/64F;int r=top.Width-(int)(24*scale),gap=(int)(8*scale),wide=(int)(112*scale),small=(int)(100*scale),y=(int)(15*scale),h=(int)(34*scale);appUpdateButton.SetBounds(r-wide,y,wide,h);holidayHistoryButton.SetBounds(appUpdateButton.Left-gap-wide,y,wide,h);holidayCheckButton.SetBounds(holidayHistoryButton.Left-gap-small,y,small,h);int lx=segment.Right+gap,lw=Math.Max(10,holidayCheckButton.Left-gap-lx);holidaySourceLabel.SetBounds(lx,(int)(9*scale),lw,(int)(22*scale));holidayDataStatus.SetBounds(lx,(int)(31*scale),lw,(int)(24*scale));holidaySourceLabel.TextAlign=ContentAlignment.MiddleRight;holidayDataStatus.TextAlign=ContentAlignment.MiddleRight;};
+  Action layoutTop=()=>{float scale=top.Height/64F;int r=top.Width-(int)(24*scale),gap=(int)(8*scale),wide=(int)(112*scale),small=(int)(100*scale),y=(int)(15*scale),h=(int)(34*scale);appUpdateButton.SetBounds(r-wide,y,wide,h);holidayHistoryButton.SetBounds(appUpdateButton.Left-gap-wide,y,wide,h);holidayCheckButton.SetBounds(holidayHistoryButton.Left-gap-small,y,small,h);int lx=segment.Right+gap,lw=holidayCheckButton.Left-gap-lx;if(lw<0){lx=holidayCheckButton.Left-gap;lw=0;}holidaySourceLabel.SetBounds(lx,(int)(9*scale),lw,(int)(22*scale));holidayDataStatus.SetBounds(lx,(int)(31*scale),lw,(int)(24*scale));holidaySourceLabel.TextAlign=ContentAlignment.MiddleRight;holidayDataStatus.TextAlign=ContentAlignment.MiddleRight;};
   top.Resize+=(s,e)=>layoutTop();layoutTop();
 
   // ── 왼쪽: 입력 카드
