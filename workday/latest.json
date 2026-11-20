@@ -1,0 +1,8 @@
+{
+  "appId": "workday320",
+  "version": "1.12.3.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/workday-v1.12.3",
+  "notes": "학년도 글자 잘림과 세로 정렬을 수정했습니다.\r\n상단 요약 카드를 두 줄로 정돈하고 확대 배율에서의 여백을 조정했습니다.\r\n설날·추석 등 같은 이름의 연속 휴일을 엑셀 비고에서 날짜 범위로 묶습니다.\r\n상단에 업데이트 확인 버튼과 새 버전 다운로드·파일 검증 기능을 추가했습니다.\r\n프로그램 아이콘을 초록색 320 디자인으로 통일했습니다.\r\n하단 버튼을 엑셀 생성으로 바꾸고 문서·표 아이콘을 정돈했습니다.",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/workday-v1.12.3/Workday-1.12.3.exe",
+  "sha256": "d1ca0434add7ef9c5391dbf1824b7e69f8f3ba82f75f6ea5d8ffc71cbe5a77fe"
+}
