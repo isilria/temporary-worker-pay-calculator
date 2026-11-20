@@ -10,6 +10,7 @@ foreach($mode in @('policy1114','flat','nonconsent',$(if($Live){'holiday-live'}e
  $folder=Join-Path $verificationRoot $mode
  $process=Start-Process -FilePath $workdayExe -ArgumentList @(('--'+$mode+'-test'),('"'+$folder+'"')) -WindowStyle Hidden -PassThru
  if(-not $process.WaitForExit(45000)){Stop-Process -InputObject $process -Force;throw ('Timed out: '+$mode)}
- if($process.ExitCode -ne 0){throw ('Failed: '+$mode+'; '+$verificationRoot)}
+ if($process.ExitCode -ne 0){Get-ChildItem -LiteralPath $folder -Filter '*tests.txt' -File | ForEach-Object {Get-Content -LiteralPath $_.FullName -Encoding UTF8};throw ('Failed: '+$mode+'; '+$verificationRoot)}
+ Get-ChildItem -LiteralPath $folder -Filter '*tests.txt' -File | ForEach-Object {Get-Content -LiteralPath $_.FullName -Encoding UTF8 -TotalCount 1}
 }
 Write-Output ('Verification records: '+$verificationRoot)
