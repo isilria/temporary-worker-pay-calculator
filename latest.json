@@ -1,8 +1,8 @@
 {
   "appId": "shortpay",
-  "version": "1.6.13.0",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.13",
-  "notes": "공휴일이 있는 반복 근무계약의 주휴수당 입력방식 차이 수정\n날짜별로 저장한 근무시간을 기본시간 변경 후에도 유지\n원본 작업·엑셀 저장 및 불러오기 검증",
-  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.13/ShortTermPayroll-1.6.13.exe",
-  "sha256": "0a0d84e444ef3b7c28d22524dcdc3b9612a0a86cc99572a738fa7f8c92d42c9c"
+  "version": "1.6.15.0",
+  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.15",
+  "notes": "공휴일 유·무급 판정 및 지급시간 계산 개선",
+  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.15/ShortTermPayroll_1.6.15.exe",
+  "sha256": "96e7b58e512a6a515cb5ea966acd94c4184a80ae12798eabc1af8bb86b34b973"
 }
