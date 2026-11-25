@@ -1,8 +1,8 @@
 {
     "appId":  "shortpay",
-    "version":  "1.7.0.0",
-    "url":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.7.0",
-    "notes":  "공정수당 계산 기능 추가(임시)\r\n폰트 및 UI 개선",
-    "downloadUrl":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.7.0/ShortTermPayroll-1.7.0.exe",
-    "sha256":  "855899407be7ba03df9e642cd305e7c967d7f70b63160c233c475444f2f3fa47"
+    "version":  "1.7.1.0",
+    "url":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.7.1",
+    "notes":  "2027년 공정수당 및 적정임금 계산 기능 추가(구체적인 가이드라인 배포 전으로 가계산을 위한 업데이트)",
+    "downloadUrl":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.7.1/ShortTermPayroll-1.7.1.exe",
+    "sha256":  "0cd9358bdb9e5cc67af82c34c78b6c402196793dffb2263beea8ea00f17551d6"
 }
