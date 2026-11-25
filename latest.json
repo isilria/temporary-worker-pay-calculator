@@ -1,8 +1,8 @@
 {
-  "appId": "shortpay",
-  "version": "1.6.15.0",
-  "url": "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.15",
-  "notes": "공휴일 유·무급 판정 및 지급시간 계산 개선",
-  "downloadUrl": "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.15/ShortTermPayroll_1.6.15.exe",
-  "sha256": "96e7b58e512a6a515cb5ea966acd94c4184a80ae12798eabc1af8bb86b34b973"
+    "appId":  "shortpay",
+    "version":  "1.6.16.0",
+    "url":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/v1.6.16",
+    "notes":  "인건비 신청서 생성 로직 개선",
+    "downloadUrl":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/v1.6.16/ShortTermPayroll-1.6.16.exe",
+    "sha256":  "e5d21167189083a5d876a0a5ce3aeb856e060e5a36eb0a1be4430ea68f69d3c7"
 }
