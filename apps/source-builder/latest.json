@@ -1,0 +1,8 @@
+{
+    "appId":  "source-builder",
+    "version":  "1.1.5.0",
+    "url":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/tag/source-builder-v1.1.5",
+    "notes":  "버전 덮어쓰기 기능 개선",
+    "downloadUrl":  "https://github.com/isilria/temporary-worker-pay-calculator/releases/download/source-builder-v1.1.5/SourceBuilder-1.1.5.exe",
+    "sha256":  "2b3207aaf4d442096e9c244495ed3477b7a915b0f74ad53dbb17aaa59a389435"
+}
